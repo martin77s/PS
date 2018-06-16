@@ -1,0 +1,60 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.0/",
+    "signature": "b332fd41db68fc2d5c925fec9549f0ea7730f5ef"
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.0": {},
+    ".NETStandard,Version=v2.0/": {
+      "TestSample/1.0.0": {
+        "dependencies": {
+          "NETStandard.Library": "2.0.1",
+          "PowerShellStandard.Library": "5.1.0-preview-03"
+        },
+        "runtime": {
+          "TestSample.dll": {}
+        }
+      },
+      "Microsoft.NETCore.Platforms/1.1.0": {},
+      "NETStandard.Library/2.0.1": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
+      "PowerShellStandard.Library/5.1.0-preview-03": {
+        "runtime": {
+          "lib/netstandard2.0/System.Management.Automation.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "TestSample/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.NETCore.Platforms/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-XGqBOj6nTUzKX2fZl0gxzyUAMHnFtxhcEZrOb7ivG4pDt7WkJK6kjgfIlBTa/n5Sm1v39cG86EfHUCF2lW4aGg==",
+      "path": "microsoft.netcore.platforms/1.1.0",
+      "hashPath": "microsoft.netcore.platforms.1.1.0.nupkg.sha512"
+    },
+    "NETStandard.Library/2.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-oA6nwv9MhEKYvLpjZ0ggSpb1g4CQViDVQjLUcDWg598jtvJbpfeP2reqwI1GLW2TbxC/Ml7xL6BBR1HmKPXlTg==",
+      "path": "netstandard.library/2.0.1",
+      "hashPath": "netstandard.library.2.0.1.nupkg.sha512"
+    },
+    "PowerShellStandard.Library/5.1.0-preview-03": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ziLfdoH1fM6BPs0rb18SSkgAto3faukmLJUTKvX6j16B0MLHMc2W3Knfy+/5zmB2T1u9gy/EhWY/czmUXLDRvg==",
+      "path": "powershellstandard.library/5.1.0-preview-03",
+      "hashPath": "powershellstandard.library.5.1.0-preview-03.nupkg.sha512"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+C:\gitRepos\PS\Modules\TestSample\bin\Debug\netstandard2.0\TestSample.deps.json
+C:\gitRepos\PS\Modules\TestSample\bin\Debug\netstandard2.0\TestSample.dll
+C:\gitRepos\PS\Modules\TestSample\bin\Debug\netstandard2.0\TestSample.pdb
+C:\gitRepos\PS\Modules\TestSample\obj\Debug\netstandard2.0\TestSample.csproj.CoreCompileInputs.cache
+C:\gitRepos\PS\Modules\TestSample\obj\Debug\netstandard2.0\TestSample.AssemblyInfoInputs.cache
+C:\gitRepos\PS\Modules\TestSample\obj\Debug\netstandard2.0\TestSample.AssemblyInfo.cs
+C:\gitRepos\PS\Modules\TestSample\obj\Debug\netstandard2.0\TestSample.dll
+C:\gitRepos\PS\Modules\TestSample\obj\Debug\netstandard2.0\TestSample.pdb
