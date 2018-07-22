@@ -66,7 +66,7 @@ function Get-azRandomName {
     )
     $TotalLength = $MaxLength - ($Prefix.Length)
     if($TotalLength -gt 0) {
-        $rnd = (1..$TotalLength | % {'abcdefghijklmnopqrstuvwxyz0123456789'.ToCharArray() | Get-Random}) -join ''
+        $rnd = (1..$TotalLength | ForEach-Object {'abcdefghijklmnopqrstuvwxyz0123456789'.ToCharArray() | Get-Random}) -join ''
         "$Prefix$rnd"
     }
     else {
@@ -91,8 +91,8 @@ function Get-azVMSize {
         $locations = $Location
     }
 
-    $sizes = $locations | ForEach-Object { $location = $_; Get-AzureRmVMSize -Location $_ } |
-        Select-Object Name, @{N = 'Location'; E = {$location}}
+    $sizes = $locations | ForEach-Object { $Location = $_; Get-AzureRmVMSize -Location $_ } |
+        Select-Object Name, @{N = 'Location'; E = {$Location}}
 
     if($Filter) {
         $sizes = $sizes | Where-Object { $_ -like $Filter }

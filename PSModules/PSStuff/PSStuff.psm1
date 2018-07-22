@@ -1,6 +1,6 @@
 function Test-Internet {
     [Activator]::CreateInstance([Type]::GetTypeFromCLSID(
-        [Guid]'{DCB00C01-570F-4A9B-8D69-199FDBA5723B}')).IsConnectedToInternet 
+        [Guid]'{DCB00C01-570F-4A9B-8D69-199FDBA5723B}')).IsConnectedToInternet
 }
 
 
@@ -8,7 +8,7 @@ function Get-UserVariable  {
     param($Name = '*')
     $special = 'ps','psise','psunsupportedconsoleapplications', 'foreach', 'profile'
     $ps = [PowerShell]::Create()
-    $null = $ps.AddScript('$null=$host;Get-Variable') 
+    $null = $ps.AddScript('$null=$host;Get-Variable')
     $reserved = $ps.Invoke() |  Select-Object -ExpandProperty Name
     $ps.Runspace.Close()
     $ps.Dispose()
@@ -40,7 +40,7 @@ function Join-Object {
 
         The objects in this collection should be consistent.
         We look at the properties on the first object for a baseline.
-    
+
     .PARAMETER Right
         'Right' collection of objects to join.
 
@@ -62,7 +62,7 @@ function Join-Object {
             - Be a hashtable like @{Name="Product Name";Expression={$_.Name}}.
                  Name is the output property name
                  Expression is the property value ($_ as the current object)
-                
+
                  Alternatively, use the Suffix or Prefix parameter to avoid collisions
                  Each property using this hashtable syntax will be excluded from suffixes and prefixes
 
@@ -75,7 +75,7 @@ function Join-Object {
             - Be a hashtable like @{Name="Product Name";Expression={$_.Name}}.
                  Name is the output property name
                  Expression is the property value ($_ as the current object)
-                
+
                  Alternatively, use the Suffix or Prefix parameter to avoid collisions
                  Each property using this hashtable syntax will be excluded from suffixes and prefixes
 
@@ -104,13 +104,13 @@ function Join-Object {
           SQL equivalent: outer left join (or simply left join)
 
         AllInRight is similar to AllInLeft.
-        
+
         OnlyIfInBoth will cause all elements from Left to be placed in the output, only if there is at least one
           match in Right.
           SQL equivalent: inner join (or simply join)
-         
+
         AllInBoth will have all entries in right and left in the output. Specifically, it will have all entries
-          in right with at least one match in left, followed by all entries in Right with no matches in left, 
+          in right with at least one match in left, followed by all entries in Right with no matches in left,
           followed by all entries in Left with no matches in Right.
           SQL equivalent: full join
 
@@ -137,12 +137,12 @@ function Join-Object {
         Join-Object -Left $l -Right $r -LeftJoinProperty Name -RightJoinProperty Manager -Type OnlyIfInBoth -RightProperties Department
 
 
-            # Name    Birthday             Department  
-            # ----    --------             ----------  
+            # Name    Birthday             Department
+            # ----    --------             ----------
             # jsmith4 4/14/2015 3:27:22 PM Department 4
             # jsmith5 4/14/2015 3:27:22 PM Department 5
 
-    .EXAMPLE  
+    .EXAMPLE
         #
         #Define some input data.
 
@@ -166,16 +166,16 @@ function Join-Object {
 
             # Name    Birthday             j_Department j_Name       j_Manager
             # ----    --------             ------------ ------       ---------
-            # jsmith1 4/14/2015 3:27:22 PM                                    
-            # jsmith2 4/14/2015 3:27:22 PM                                    
-            # jsmith3 4/14/2015 3:27:22 PM                                    
-            # jsmith4 4/14/2015 3:27:22 PM Department 4 Department 4 jsmith4  
-            # jsmith5 4/14/2015 3:27:22 PM Department 5 Department 5 jsmith5  
+            # jsmith1 4/14/2015 3:27:22 PM
+            # jsmith2 4/14/2015 3:27:22 PM
+            # jsmith3 4/14/2015 3:27:22 PM
+            # jsmith4 4/14/2015 3:27:22 PM Department 4 Department 4 jsmith4
+            # jsmith5 4/14/2015 3:27:22 PM Department 5 Department 5 jsmith5
 
     .EXAMPLE
         #
         #Hey!  You know how to script right?  Can you merge these two CSVs, where Path1's IP is equal to Path2's IP_ADDRESS?
-        
+
         #Get CSV data
         $s1 = Import-CSV $Path1
         $s2 = Import-CSV $Path2
@@ -188,8 +188,8 @@ function Join-Object {
         #
         # "Hey Warren, we need to match up SSNs to Active Directory users, and check if they are enabled or not.
         #  I'll e-mail you an unencrypted CSV with all the SSNs from gmail, what could go wrong?"
-        
-        # Import some SSNs. 
+
+        # Import some SSNs.
         $SSNs = Import-CSV -Path D:\SSNs.csv
 
         #Get AD users, and match up by a common value, samaccountname in this case:
@@ -260,11 +260,11 @@ function Join-Object {
                 $propertyHash = $property -as [hashtable]
                 if($null -ne $propertyHash)
                 {
-                    $hashName = $propertyHash["name"] -as [string]         
+                    $hashName = $propertyHash["name"] -as [string]
                     $expression = $propertyHash["expression"] -as [scriptblock]
 
                     $expressionValue = $expression.Invoke($item)[0]
-            
+
                     $hash[$hashName] = $expressionValue
                 }
                 else
@@ -293,7 +293,7 @@ function Join-Object {
                 $propertyHash = $Prop -as [hashtable]
                 if($null -ne $propertyHash)
                 {
-                    $hashName = $propertyHash["name"] -as [string]         
+                    $hashName = $propertyHash["name"] -as [string]
                     $expression = $propertyHash["expression"] -as [scriptblock]
 
                     $ScriptString = $expression.tostring()
@@ -302,7 +302,7 @@ function Join-Object {
                         Write-Verbose "Property '$HashName'`: Adding param(`$_) to scriptblock '$ScriptString'"
                         $Expression = [ScriptBlock]::Create("param(`$_)`n $ScriptString")
                     }
-                
+
                     $Output = @{Name =$HashName; Expression = $Expression }
                     Write-Verbose "Found $Side property hash with name $($Output.Name), expression:`n$($Output.Expression | out-string)"
                     $Output
@@ -359,12 +359,12 @@ function Join-Object {
                         $Prop.Add('Expression',$Prop['E'])
                     }
                 }
-            
+
                 if(-not $Prop.ContainsKey('Expression') -or $Prop['Expression'] -like $null )
                 {
                     Throw "Property is missing an expression`n. This should be in calculated property format, with a Name and an Expression:`n@{Name='Something';Expression={`$_.Something}}`nAffected property:`n$($Prop | out-string)"
                 }
-            }        
+            }
         }
 
         $leftHash = @{}
@@ -372,7 +372,7 @@ function Join-Object {
 
         # Hashtable keys can't be null; we'll use any old object reference as a placeholder if needed.
         $nullKey = New-Object psobject
-        
+
         $bound = $PSBoundParameters.keys -contains "InputObject"
         if(-not $bound)
         {
@@ -462,7 +462,7 @@ function Join-Object {
             }
         }
 
-        $AllProps = $AllProps | Select -Unique
+        $AllProps = $AllProps | Select-Object -Unique
 
         Write-Verbose "Combined set of properties: $($AllProps -join ', ')"
 
@@ -479,7 +479,7 @@ function Join-Object {
                 {
                     foreach ($leftItem in $leftBucket)
                     {
-                        WriteJoinObjectOutput $leftItem $null $LeftProperties $RightProperties | Select $AllProps
+                        WriteJoinObjectOutput $leftItem $null $LeftProperties $RightProperties | Select-Object $AllProps
                     }
                 }
             }
@@ -489,7 +489,7 @@ function Join-Object {
                 {
                     foreach ($rightItem in $rightBucket)
                     {
-                        WriteJoinObjectOutput $leftItem $rightItem $LeftProperties $RightProperties | Select $AllProps
+                        WriteJoinObjectOutput $leftItem $rightItem $LeftProperties $RightProperties | Select-Object $AllProps
                     }
                 }
             }
@@ -508,7 +508,7 @@ function Join-Object {
                 {
                     foreach ($rightItem in $rightBucket)
                     {
-                        WriteJoinObjectOutput $null $rightItem $LeftProperties $RightProperties | Select $AllProps
+                        WriteJoinObjectOutput $null $rightItem $LeftProperties $RightProperties | Select-Object $AllProps
                     }
                 }
             }
@@ -532,7 +532,7 @@ function Get-Proxy {
     $proxyValues['BypassAdresses'] = (Get-ItemProperty $regKeyPath -Name ProxyOverride -ErrorAction SilentlyContinue).ProxyOverride
     $proxyValues['AutoConfigURL'] = (Get-ItemProperty $regKeyPath -Name AutoConfigURL -ErrorAction SilentlyContinue).AutoConfigURL
 
-    New-Object -TypeName PSObject -Property $proxyValues | 
+    New-Object -TypeName PSObject -Property $proxyValues |
         Select-Object -Property Enabled, ProxyServer, Port, ProxyServerSecured, PortSecured, BypassAdresses, AutoConfigURL
 }
 
@@ -543,7 +543,7 @@ function Set-Proxy {
 
     param(
         [Parameter(Mandatory=$true, ParameterSetName='Enable')]
-        [switch]$Enable, 
+        [switch]$Enable,
 
         [Parameter(Mandatory=$false, ParameterSetName='Enable')]
         [string]$AutoConfigURL = $null,
@@ -562,9 +562,9 @@ function Set-Proxy {
 
         [Parameter(Mandatory=$false, ParameterSetName='Enable')]
         [string[]]$BypassAdresses = '',
-    
+
         [Parameter(Mandatory=$true, ParameterSetName='Disable')]
-        [switch]$Disable, 
+        [switch]$Disable,
 
         [Parameter(Mandatory=$false)]
         [switch]$PassThru
@@ -574,7 +574,7 @@ function Set-Proxy {
     if ($pscmdlet.ShouldProcess('Browser Settings', $MyInvocation.MyCommand)) {
 
         $regKeyPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
-        
+
 
         if ($PSCmdlet.ParameterSetName -eq 'Disable') {
             Set-ItemProperty $regKeyPath -Name ProxyEnable -Value 0
@@ -657,7 +657,7 @@ function Clear-MRUList {
         }
     }
     $regValues | Where-Object { $_.Name -ne 'MRUList' } | Remove-ItemProperty
-    Clear-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU -Name MRUList 
+    Clear-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU -Name MRUList
 }
 
 
@@ -676,18 +676,18 @@ function Start-PSCountdown {
         [ValidateNotNullorEmpty()]
         [string]$Message = "Starting soon.",
         [Parameter(HelpMessage = "Use this parameter to clear the screen prior to starting the countdown.")]
-        [switch]$ClearHost 
+        [switch]$ClearHost
     )
     DynamicParam {
         #this doesn't appear to work in PowerShell core on Linux
         if ($host.PrivateData.ProgressBackgroundColor -And ( $PSVersionTable.Platform -eq 'Win32NT' -OR $PSEdition -eq 'Desktop')) {
-    
+
             #define a parameter attribute object
             $attributes = New-Object System.Management.Automation.ParameterAttribute
             $attributes.ValueFromPipelineByPropertyName = $False
             $attributes.Mandatory = $false
             $attributes.HelpMessage = @"
-Select a progress bar style. This only applies when using the PowerShell console or ISE.           
+Select a progress bar style. This only applies when using the PowerShell console or ISE.
 
 Default - use the current value of `$host.PrivateData.ProgressBarBackgroundColor
 Transparent - set the progress bar background color to the same as the console
@@ -704,43 +704,43 @@ Random - randomly cycle through a list of console colors
             #add an alias
             $alias = [System.Management.Automation.AliasAttribute]::new("style")
             $attributeCollection.Add($alias)
-    
+
             #define the dynamic param
             $dynParam1 = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("ProgressStyle", [string], $attributeCollection)
             $dynParam1.Value = "Default"
-    
+
             #create array of dynamic parameters
             $paramDictionary = New-Object -Type System.Management.Automation.RuntimeDefinedParameterDictionary
             $paramDictionary.Add("ProgressStyle", $dynParam1)
             #use the array
-            return $paramDictionary     
-    
+            return $paramDictionary
+
         } #if
     } #dynamic parameter
     Begin {
         $loading = @(
             'Waiting for someone to hit enter',
-            'Warming up processors', 
-            'Downloading the Internet', 
-            'Trying common passwords', 
-            'Commencing infinite loop', 
-            'Injecting double negatives', 
-            'Breeding bits', 
-            'Capturing escaped bits', 
-            'Dreaming of electric sheep', 
-            'Calculating gravitational constant', 
-            'Adding Hidden Agendas', 
-            'Adjusting Bell Curves', 
-            'Aligning Covariance Matrices', 
-            'Attempting to Lock Back-Buffer', 
-            'Building Data Trees', 
-            'Calculating Inverse Probability Matrices', 
-            'Calculating Llama Expectoration Trajectory', 
-            'Compounding Inert Tessellations', 
-            'Concatenating Sub-Contractors', 
-            'Containing Existential Buffer', 
-            'Deciding What Message to Display Next', 
-            'Increasing Accuracy of RCI Simulators', 
+            'Warming up processors',
+            'Downloading the Internet',
+            'Trying common passwords',
+            'Commencing infinite loop',
+            'Injecting double negatives',
+            'Breeding bits',
+            'Capturing escaped bits',
+            'Dreaming of electric sheep',
+            'Calculating gravitational constant',
+            'Adding Hidden Agendas',
+            'Adjusting Bell Curves',
+            'Aligning Covariance Matrices',
+            'Attempting to Lock Back-Buffer',
+            'Building Data Trees',
+            'Calculating Inverse Probability Matrices',
+            'Calculating Llama Expectoration Trajectory',
+            'Compounding Inert Tessellations',
+            'Concatenating Sub-Contractors',
+            'Containing Existential Buffer',
+            'Deciding What Message to Display Next',
+            'Increasing Accuracy of RCI Simulators',
             'Perturbing Matrices',
             'Initializing flux capacitors',
             'Brushing up on my Dothraki',
@@ -762,16 +762,16 @@ Random - randomly cycle through a list of console colors
             'Trying to quit vi',
             'Waiting for the last Game_of_Thrones book',
             'Watching paint dry',
-            'Aligning warp coils'               
+            'Aligning warp coils'
         )
         if ($ClearHost) {
             Clear-Host
         }
         $PSBoundParameters | out-string | Write-Verbose
-        if ($psboundparameters.ContainsKey('progressStyle')) { 
-          
+        if ($psboundparameters.ContainsKey('progressStyle')) {
+
             if ($PSBoundParameters.Item('ProgressStyle') -ne 'default') {
-                $saved = $host.PrivateData.ProgressBackgroundColor 
+                $saved = $host.PrivateData.ProgressBackgroundColor
             }
             if ($PSBoundParameters.Item('ProgressStyle') -eq 'transparent') {
                 $host.PrivateData.progressBackgroundColor = $host.ui.RawUI.BackgroundColor
@@ -797,7 +797,7 @@ Random - randomly cycle through a list of console colors
             #bail out
             Return
         }
-        Do {   
+        Do {
             $now = Get-Date
             $secondsElapsed = (New-TimeSpan -Start $startTime -End $now).TotalSeconds
             $secondsRemaining = $totalSeconds - $secondsElapsed
@@ -837,7 +837,7 @@ Random - randomly cycle through a list of console colors
         }
     } #end
 
-} 
+}
 
 
 function Start-Break {
@@ -864,7 +864,7 @@ function Flip-Object {
                     Value = $instance.$_
                 }
             }
-        } 
+        }
     }
 }
 
@@ -896,12 +896,12 @@ function Connect-Sql {
 
     try  {
         $conn.Open()
-        return $conn    
+        return $conn
     }
 
     catch {
         throw $_.Exception.Message
-    }   
+    }
 }
 
 
@@ -1007,178 +1007,6 @@ function Invoke-SqlQuery {
 }
 
 
-function Show-Clock {
-#
-    Set-StrictMode -Version latest
-
-    Add-Type -AssemblyName System.Drawing
-    Add-Type -AssemblyName System.Windows.Forms
-
-    $DegreesToRadians = [Math]::PI / 180
-    $PSicon = [Drawing.Icon]::ExtractAssociatedIcon((Get-Command -Name powershell).Path)
-
-    #################################
-    function Initialize-Clock() {
-        # create the form to display the clock
-        $script:form = New-Object  -TypeName Windows.Forms.Form
-        $script:form.Icon = $PSicon
-        $script:form.Text = 'Analogue Clock'
-        $script:form.Height = 700
-        $script:form.Width = $form.Height
-        $script:form.BackColor = [Drawing.Color]::White
-        $script:form.Location.X = 1000
-        $script:form.TransparencyKey = [Drawing.Color]::Brown
-
-        $script:clockRadius = $form.Height / 2
-        $script:CentreRadius = $form.Height / 45
-
-        $script:lenHrHand = ($form.Height / 3 / 1.75)
-        $script:lenMinHand = ($form.Height / 3 / 1.1)
-        $script:lenSecHand = ($form.Height / 3 / 1.1)
-
-        $script:SecondsPen = New-Object  -TypeName Drawing.Pen -ArgumentList ([Drawing.Color]::Red)
-        $script:MinutesPen = New-Object  -TypeName Drawing.Pen -ArgumentList ([Drawing.Color]::Black)
-        $script:HoursPen = New-Object  -TypeName Drawing.Pen -ArgumentList ([Drawing.Color]::Black)
-        $script:TicksPen = New-Object  -TypeName Drawing.Pen -ArgumentList ([Drawing.Color]::Black)
-        $script:FifthPen = New-Object  -TypeName Drawing.Pen -ArgumentList ([Drawing.Color]::Black)
-
-        $script:CircleBrush = New-Object  -TypeName Drawing.SolidBrush -ArgumentList ([Drawing.Color]::Black)
-
-        $script:CentrePoint = New-Object  -TypeName Drawing.PointF
-        $script:HourPoint = New-Object  -TypeName Drawing.PointF
-        $script:MinPoint = New-Object  -TypeName Drawing.PointF
-        $script:SecPoint = New-Object  -TypeName Drawing.PointF
-
-        $script:InnerPoint = New-Object  -TypeName Drawing.PointF
-        $script:OuterPoint = New-Object  -TypeName Drawing.PointF
-        $script:SpotPoint = New-Object  -TypeName Drawing.PointF
-
-        $script:CentrePoint.X = $form.ClientSize.Width / 2
-        $script:CentrePoint.Y = $form.ClientSize.Height / 2
-
-        $script:formTimer = New-Object  -TypeName Windows.Forms.Timer
-        $formTimer.Interval = 1000    # 1 second
-    }
-
-    #################################
-    $load_AnalogueClock = {
-        $resize_AnalogueClock
-    }
-
-    #################################
-    $redraw_AnalogueClock = {
-        $form.Invalidate()
-    }
-
-    #################################
-    $resize_AnalogueClock = {
-        $form.Width = $form.Height
-        $CentrePoint.X = $form.ClientSize.Width / 2
-        $CentrePoint.Y = $form.ClientSize.Height / 2
-
-        $clockRadius = $form.Height / 2
-        $CentreRadius = $form.Height / 45
-
-        $lenHrHand = ($form.Height / 3 / 1.75)
-        $lenMinHand = ($form.Height / 3 / 1.1)
-        $lenSecHand = ($form.Height / 3 / 1.1)
-
-        $secondsPenWidth = $form.Height / 600
-        $minutesPenWidth = $form.Height / 200
-        $hoursPenWidth = $form.Height / 150
-
-        $SecondsPen.Width = $secondsPenWidth
-        $MinutesPen.Width = $minutesPenWidth
-        $HoursPen.Width = $hoursPenWidth
-        $TicksPen.Width = $secondsPenWidth
-        $FifthPen.Width = $secondsPenWidth * 3
-
-        $form.refresh()
-    }
-
-    #################################
-    $paint_AnalogueClock = {
-        $graphicsObj = $form.createGraphics()
-        $currentHour = (Get-Date).Hour % 12
-        $currentMinute = (Get-Date).Minute
-        $currentSecond = (Get-Date).Second
-
-        # degrees around the circle
-        $hourDegrees = 30 * ($currentHour + ($currentMinute / 60))
-        $minuteDegrees = $currentMinute * 6
-        $secondDegrees = $currentSecond * 6
-
-        # Sin and Cos functions require angles in radians
-        $hourRadian = $hourDegrees * $DegreesToRadians
-        $minuteRadian = $minuteDegrees * $DegreesToRadians
-        $secondRadian = $secondDegrees * $DegreesToRadians
-
-        # calc the endpoint of each hand
-        $HourPoint.X = $CentrePoint.X + ($lenHrHand * [Math]::Sin($hourRadian))
-        $HourPoint.Y = $CentrePoint.Y - ($lenHrHand * [Math]::Cos($hourRadian))
-        $MinPoint.X = $CentrePoint.X + ($lenMinHand * [Math]::Sin($minuteRadian))
-        $MinPoint.Y = $CentrePoint.Y - ($lenMinHand * [Math]::Cos($minuteRadian))
-        $SecPoint.X = $CentrePoint.X + ($lenSecHand * [Math]::Sin($secondRadian))
-        $SecPoint.Y = $CentrePoint.Y - ($lenSecHand * [Math]::Cos($secondRadian))
-
-        # now draw the clock hands
-        # should use FillPolygon for hour and minutes hands?
-        $graphicsObj.DrawLine($HoursPen, $CentrePoint, $HourPoint)
-        $graphicsObj.DrawLine($MinutesPen, $CentrePoint, $MinPoint)
-        $graphicsObj.DrawLine($SecondsPen, $CentrePoint, $SecPoint)
-
-        # draw the ticks around the outside clock face
-        for ($ticks = 1; $ticks -lt 61; $ticks++) {
-            $tickRadian = ($ticks * 6) * $DegreesToRadians
-            $innerpoint.X = $CentrePoint.X + ($clockRadius / 1.50 * [Math]::Sin($tickRadian))
-            $innerpoint.Y = $CentrePoint.Y - ($clockRadius / 1.50 * [Math]::Cos($tickRadian))
-            if (($ticks % 5) -eq 0) {
-                $outerpoint.X = $CentrePoint.X + ($clockRadius / 1.60 * [Math]::Sin($tickRadian))
-                $outerpoint.Y = $CentrePoint.Y - ($clockRadius / 1.60 * [Math]::Cos($tickRadian))
-                $graphicsObj.DrawLine($FifthPen, $innerpoint, $outerpoint)
-            }
-            else {
-                $outerpoint.X = $CentrePoint.X + ($clockRadius / 1.55 * [Math]::Sin($tickRadian))
-                $outerpoint.Y = $CentrePoint.Y - ($clockRadius / 1.55 * [Math]::Cos($tickRadian))
-                $graphicsObj.DrawLine($TicksPen, $innerpoint, $outerpoint)
-            }
-        }
-
-        # and draw the circle at Centre
-        $SpotPoint.X = $CentrePoint.X - $CentreRadius / 2
-        $SpotPoint.Y = $CentrePoint.Y - $CentreRadius / 2
-        $graphicsObj.FillEllipse($CircleBrush, $SpotPoint.X, $SpotPoint.Y, $CentreRadius, $CentreRadius)
-
-        $graphicsObj.Dispose()
-    }
-
-    #################################
-    $dispose_AnalogueClock = {
-        $SecondsPen.Dispose()
-        $MinutesPen.Dispose()
-        $HoursPen.Dispose()
-        $TicksPen.Dispose()
-        $CircleBrush.Dispose()
-        $formTimer.Dispose()
-        $form.Dispose()
-    }
-
-    #################################
-    function Start-Clock {
-        Initialize-Clock
-        $formTimer.add_tick($resize_AnalogueClock)
-        $form.add_load($load_AnalogueClock)
-        $form.add_resize($resize_AnalogueClock)
-        $form.add_paint($paint_AnalogueClock)
-        $form.add_formclosed($dispose_AnalogueClock)
-        $formTimer.Start()
-        [void]$form.ShowDialog()
-    }
-
-    Start-Clock
-}
-
-
 function ConvertFrom-ErrorRecord {
   [CmdletBinding(DefaultParameterSetName="ErrorRecord")]
   param
@@ -1186,12 +1014,12 @@ function ConvertFrom-ErrorRecord {
     [Management.Automation.ErrorRecord]
     [Parameter(Mandatory,ValueFromPipeline,ParameterSetName="ErrorRecord", Position=0)]
     $Record,
-    
+
     [Object]
     [Parameter(Mandatory,ValueFromPipeline,ParameterSetName="Unknown", Position=0)]
     $Alien
   )
-  
+
   process
   {
     if ($PSCmdlet.ParameterSetName -eq 'ErrorRecord')
@@ -1208,16 +1036,16 @@ function ConvertFrom-ErrorRecord {
     else
     {
       Write-Warning "$Alien"
-    } 
+    }
   }
-} 
+}
 
 
 function ConvertTo-Base64 {
-    param($String) 
+    param($String)
     [Convert]::ToBase64String(
-        [System.Text.Encoding]::UTF8.GetBytes($String) 
-    ) 
+        [System.Text.Encoding]::UTF8.GetBytes($String)
+    )
 }
 
 
@@ -1308,7 +1136,7 @@ function Get-Weather {
 <#
 .SYNOPSIS
   Shows current weather conditions in PowerShell console.
- 
+
 .DESCRIPTION
   This scirpt will show the current weather conditions for your area in your PowerShell console.
 While you could use the script on its own, it is highly recommended to add it to your profile.
@@ -1316,31 +1144,31 @@ See https://technet.microsoft.com/en-us/library/ff461033.aspx for more info.
 
   You will need to get an OpenWeather API key from http://openweathermap.org/api - it's free.
 Once you have your key, replace "YOUR_API_KEY" with your key.
- 
-  Note that weather results are displayed in metric (°C) units.
-To switch to imperial (°F) change all instances of '&units=metric' to '&units=imperial'
-as well as all instances of '°C' to '°F'. 
- 
+
+  Note that weather results are displayed in metric (ï¿½C) units.
+To switch to imperial (ï¿½F) change all instances of '&units=metric' to '&units=imperial'
+as well as all instances of 'ï¿½C' to 'ï¿½F'.
+
 .EXAMPLE
   Get-Weather -City Toronto -Country CA
- 
+
   In this example, we will get the weather for Toronto, CA.
 If you do not live in a major city, select the closest one to you. Note that the
 country code is the two-digit code for your country. For a list of country
 codes, see https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
- 
+
 .NOTES
   Written by Nick Tamm, nicktamm.com
 I take no responsibility for any issues caused by this script.
- 
+
 .LINK
   https://github.com/obs0lete/Get-Weather
 #>
   param (
     [string]$City = 'Tel Aviv',
-    
+
     [string]$Country = 'Israel')
-  
+
   $API = 'f22a7a683b49ac7123b96ff0ed892539'
   $units = 'metric' # imperial | metric
   $unitChar = if($units -eq 'metric') { [char]0176 } else { ' F' }
@@ -1353,7 +1181,7 @@ I take no responsibility for any issues caused by this script.
   $JSONSunrise = $JSONData.sys.sunrise
   $JSONSunset = $JSONData.sys.sunset
   $JSONLastUpdate = $JSONData.dt
-  
+
   <# Convert UNIX UTC time to (human) readable format #>
   $Sunrise = [TimeZone]::CurrentTimeZone.ToLocalTime(([datetime]'1/1/1970').AddSeconds($JSONSunrise))
   $Sunset = [TimeZone]::CurrentTimeZone.ToLocalTime(([datetime]'1/1/1970').AddSeconds($JSONSunset))
@@ -1361,30 +1189,30 @@ I take no responsibility for any issues caused by this script.
   $Sunrise = "{0:HH:mm:ss}" -f (Get-Date $Sunrise)
   $Sunset = "{0:HH:mm:ss}" -f (Get-Date $Sunset)
   $LastUpdate = "{0:HH:mm:ss}" -f (Get-Date $LastUpdate)
-  
+
   <# XML request for everything else #>
   $Url = "api.openweathermap.org/data/2.5/weather?q=$City,$Country&units=$units&appid=$API&type=accurate&mode=xml"
   [xml]$XMLResults = Invoke-WebRequest $Url
   $XMLData = $XMLResults.current
-  
+
   <# Get current weather value. Needed to convert case of characters. #>
   $CurrentValue = $XMLData.weather.value
-  
+
   <# Get precipitation mode (type of precipitation). Needed to convert case of characters. #>
   $PrecipitationValue = $XMLData.precipitation.mode
-  
+
   <# Get precipitation amount (in mm). Needed to convert case of characters. #>
   $PrecipitationMM = $XMLData.precipitation.value
-  
+
   <# Get precipitation unit (mm in last x hours). Needed to convert case of characters. #>
   $PrecipitationHRS = $XMLData.precipitation.unit
-  
+
   <# Get wind speed value. Needed to convert case of characters. #>
   $WindValue = $XMLData.wind.speed.name
-  
+
   <# Get the current time. This is for clear conditions at night time. #>
   $Time = Get-Date -DisplayHint Time
-  
+
   <# Define the numbers for various weather conditions #>
   $Thunder = "200", "201", "202", "210", "211", "212", "221", "230", "231", "232"
   $Drizzle = "300", "301", "302", "310", "311", "312", "313", "314", "321", "500", "501", "502"
@@ -1397,7 +1225,7 @@ I take no responsibility for any issues caused by this script.
   $PartlyCloudy = "801", "802", "803"
   $Cloudy = "804"
   $Windy = "900", "901", "902", "903", "904", "905", "906", "951", "952", "953", "954", "955", "956", "957", "958", "959", "960", "961", "962"
-  
+
   <# Create the variables we will use to display weather information #>
   $Weather = (Get-Culture).textinfo.totitlecase($CurrentValue.tolower())
   $CurrentTemp = "Current Temp : " + [Math]::Round($XMLData.temperature.value, 0) + $unitChar
@@ -1405,26 +1233,26 @@ I take no responsibility for any issues caused by this script.
   $Low = "Today's Low  : " + [Math]::Round($XMLData.temperature.min, 0) + $unitChar
   $Humidity = "Humidity       : " + $XMLData.humidity.value + $XMLData.humidity.unit
   $Precipitation = "Precipitation  : " + (Get-Culture).textinfo.totitlecase($PrecipitationValue.tolower())
-  
+
   <# Checking if there is precipitation and if so, display the values in $precipitationMM and $precipitationHRS #>
   if ($Precipitation -eq "Precipitation  : No") {
     $PrecipitationData = "Precip. Data   : No Precipitation"
   } else {
     $PrecipitationData = "Precip. Data   : " + $PrecipitationMM + "mm in the last " + $PrecipitationHRS
   }
-  
+
   $script:WindSpeed = "Wind Speed     : " + ([math]::Round(([decimal]$XMLData.wind.speed.value * 1.609344), 1)) + " km/h" + " - Direction: " + $XMLData.wind.direction.code
   $WindCondition = "Wind Condition : " + (Get-Culture).TextInfo.ToTitleCase($WindValue.tolower())
   $Sunrise = "Sunrise      : " + $Sunrise
   $Sunset = "Sunset       : " + $Sunset
-  
+
   <# END VARIABLES #>
-  
+
   Write-Host ""
   Write-Host ("Current weather conditions for {0}: " -f $XMLData.city.name) -nonewline; Write-Host $Weather -ForegroundColor Yellow;
   Write-Host "Last Updated:" -nonewline; Write-Host "" $LastUpdate -ForegroundColor Yellow;
   Write-Host ""
-  
+
   Show-WeatherImage
 }
 
@@ -1438,7 +1266,7 @@ function Show-WeatherImage {
     Write-Host "	  /_   /_  		" -ForegroundColor Yellow -nonewline; Write-Host "$Sunrise		$WindSpeed" -ForegroundColor white;
     Write-Host "	   /    /  		" -ForegroundColor Yellow -nonewline; Write-Host "$Sunset		$WindCondition" -ForegroundColor white;
     Write-Host ""
-  
+
   } elseif ($Drizzle.Contains($XMLData.weather.number)) {
     Write-Host "	  .-.   		" -ForegroundColor Gray -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	 (   ). 		" -ForegroundColor Gray -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1446,7 +1274,7 @@ function Show-WeatherImage {
     Write-Host "	 / / / 			" -ForegroundColor Cyan -nonewline; Write-Host "$Sunrise		$WindSpeed" -ForegroundColor white;
     Write-Host "	  /  			" -ForegroundColor Cyan -nonewline; Write-Host "$Sunset		$WindCondition" -ForegroundColor white;
     Write-Host ""
-  
+
   } elseif ($Rain.Contains($XMLData.weather.number)) {
     Write-Host "	    .-.   		" -ForegroundColor Gray -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	   (   ). 		" -ForegroundColor Gray -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1454,7 +1282,7 @@ function Show-WeatherImage {
     Write-Host "	 //////// 		" -ForegroundColor Cyan -nonewline; Write-Host "$Sunrise		$WindSpeed" -ForegroundColor white;
     Write-Host "	 /////// 		" -ForegroundColor Cyan -nonewline; Write-Host "$Sunset		$WindCondition" -ForegroundColor white;
     Write-Host ""
-  
+
   } elseif ($LightSnow.Contains($XMLData.weather.number)) {
     Write-Host "	  .-.   		" -ForegroundColor Gray -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	 (   ). 		" -ForegroundColor Gray -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1462,7 +1290,7 @@ function Show-WeatherImage {
     Write-Host "	 *  *  *		$Sunrise		$WindSpeed"
     Write-Host "	*  *  * 		$Sunset		$WindCondition"
     Write-Host ""
-  
+
   } elseif ($HeavySnow.Contains($XMLData.weather.number)) {
     Write-Host "	    .-.   		" -ForegroundColor Gray -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	   (   ). 		" -ForegroundColor Gray -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1471,7 +1299,7 @@ function Show-WeatherImage {
     Write-Host "	 * * * *  		$Sunset		$WindCondition"
     Write-Host "	  * * * * "
     Write-Host ""
-  
+
   } elseif ($SnowAndRain.Contains($XMLData.weather.number)) {
     Write-Host "	  .-.   		" -ForegroundColor Gray -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	 (   ). 		" -ForegroundColor Gray -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1479,7 +1307,7 @@ function Show-WeatherImage {
     Write-Host "	 */ */* 		$Sunrise		$WindSpeed"
     Write-Host "	* /* /* 		$Sunset		$WindCondition"
     Write-Host ""
-  
+
   } elseif ($Atmosphere.Contains($XMLData.weather.number)) {
     Write-Host "	_ - _ - _ -		" -ForegroundColor Gray -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	 _ - _ - _ 		" -ForegroundColor Gray -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1487,9 +1315,9 @@ function Show-WeatherImage {
     Write-Host "	 _ - _ - _ 		" -ForegroundColor Gray -nonewline; Write-Host "$Sunrise		$WindSpeed" -ForegroundColor white;
     Write-Host "				$Sunset		$WindCondition"
     Write-Host ""
-  
+
   }
-    <#	
+    <#
       The following will be displayed on clear evening conditions
       It is set to 18:00:00 (6:00PM). Change this to any value you want.
     #> elseif ($Clear.Contains($XMLData.weather.number) -and $Time -gt "18:00:00") {
@@ -1500,7 +1328,7 @@ function Show-WeatherImage {
     Write-Host "	   *    ./ /	  		$Sunset		$WindCondition"
     Write-Host "	       ---'   *   "
     Write-Host ""
-  
+
   } elseif ($Clear.Contains($XMLData.weather.number)) {
     Write-Host "	   \ | /  		" -ForegroundColor Yellow -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	    .-.   		" -ForegroundColor Yellow -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1508,7 +1336,7 @@ function Show-WeatherImage {
     Write-Host "	    ``'``   		" -ForegroundColor Yellow -nonewline; Write-Host "$Sunrise		$WindSpeed" -ForegroundColor white;
     Write-Host "	   / | \  		" -ForegroundColor Yellow -nonewline; Write-Host "$Sunset		$WindCondition" -ForegroundColor white;
     Write-Host ""
-  
+
   } elseif ($PartlyCloudy.Contains($XMLData.weather.number)) {
     Write-Host "	   \ | /   		" -ForegroundColor Yellow -nonewline; Write-Host "$CurrentTemp		$Humidity" -ForegroundColor white;
     Write-Host "	    .-.    		" -ForegroundColor Yellow -nonewline; Write-Host "$High		$Precipitation" -ForegroundColor white;
@@ -1516,7 +1344,7 @@ function Show-WeatherImage {
     Write-Host "	   .-(    ). 		$Sunrise		$WindSpeed"
     Write-Host "	  (___.__)__)		$Sunset		$WindCondition"
     Write-Host ""
-  
+
   } elseif ($Cloudy.Contains($XMLData.weather.number)) {
     Write-Host "	    .--.   		$CurrentTemp		$Humidity"
     Write-Host "	 .-(    ). 		$High		$Precipitation"
@@ -1524,7 +1352,7 @@ function Show-WeatherImage {
     Write-Host "	            		$Sunrise		$WindSpeed"
     Write-Host "				$Sunset		$WindCondition"
     Write-Host ""
-  
+
   } elseif ($Windy.Contains($XMLData.weather.number)) {
     Write-Host "	~~~~      .--.   		$CurrentTemp		$Humidity"
     Write-Host "	 ~~~~~ .-(    ). 		$High		$Precipitation"
