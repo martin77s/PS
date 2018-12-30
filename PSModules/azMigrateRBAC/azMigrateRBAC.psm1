@@ -1,7 +1,12 @@
 #requires -Module AzureAD, Az.Accounts
 
 function Login {
+    Write-Host 'Login to Azure Active Directory'
+    Import-Module -Name AzureAD
     Connect-AzureAD
+
+    Write-Host 'Login to Azure Resource Manager'
+    Import-Module -Name Az.Accounts
     Connect-AzAccount
 }
 
@@ -23,7 +28,7 @@ function Find-AADUser {
 
 function Assert-AADObjectId {
 
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
 
     Param(
         [Parameter(Mandatory)]
@@ -33,21 +38,23 @@ function Assert-AADObjectId {
         [string] $ObjectType
     )
 
-    $NewObjectId = $ObjectIdTranslation[$ObjectId]
+    $NewObjectId = $null
+    if ($ObjectIdTranslation.ContainsKey($ObjectId)) {
 
-    if (!$NewObjectId) {
+        $NewObjectId = $ObjectIdTranslation[$ObjectId]
+
+    }
+    else {
 
         switch ($ObjectType) {
             'Group' {
                 $OldObject = $OldTenant.Groups | Where-Object { $_.ObjectId -eq $ObjectId }
                 $Group = Get-AzureADGroup -Filter ("DisplayName eq '{0}'" -f $OldObject.DisplayName)
                 if (!$Group) {
-                    if ($PSCmdlet.ShouldProcess($OldObject.DisplayName, 'New-AzureADGroup')) {
-                        $Group = New-AzureADGroup -DisplayName $OldObject.DisplayName -MailEnabled $false -SecurityEnabled $true -MailNickName 'NotSet'
+                    $Group = New-AzureADGroup -DisplayName $OldObject.DisplayName -MailEnabled $false -SecurityEnabled $true -MailNickName 'NotSet'
 
-                        foreach ($member in $OldObject.Members) {
-                            Add-AzureADGroupMember -ObjectId $Group.ObjectId -RefObjectId (Assert-AADObjectId -ObjectId $member.ObjectId -ObjectType $member.ObjectType)
-                        }
+                    foreach ($member in $OldObject.Members) {
+                        Add-AzureADGroupMember -ObjectId $Group.ObjectId -RefObjectId (Assert-AADObjectId -ObjectId $member.ObjectId -ObjectType $member.ObjectType)
                     }
                 }
                 else {
@@ -63,28 +70,23 @@ function Assert-AADObjectId {
                 $SPN = Get-AzureADServicePrincipal -Filter ("DisplayName eq '{0}'" -f $OldObject.DisplayName)
 
                 if (!$SPN) {
-                    if ($PSCmdlet.ShouldProcess($OldObject.DisplayName, 'New-AzureADApplication')) {
-                        $App = Get-AzureADApplication -Filter ("DisplayName eq '{0}'" -f $OldObject.DisplayName)
+                    $App = Get-AzureADApplication -Filter ("DisplayName eq '{0}'" -f $OldObject.DisplayName)
 
-                        if (!$App) {
-                            if (!$OldObject.ReplyURLs) { $OldObject.ReplyURLs = "http://localhost" }
-                            if (!$OldObject.HomePage) { $OldObject.HomePage = "http://localhost" }
-                            $App = New-AzureADApplication -DisplayName $OldObject.DisplayName -Homepage $OldObject.HomePage -ReplyUrls $OldObject.ReplyURLs
-                            $SPN = New-AzureADServicePrincipal -AccountEnabled $true -AppId $App.AppId -AppRoleAssignmentRequired $true -DisplayName $OldObject.DisplayName -Tags {WindowsAzureActiveDirectoryIntegratedApp}
-                        }
-                        else {
-                            $SPN = Get-AzureADServicePrincipal -Filter ("AppID eq '{0}'" -f $App.AppId)
-                            if (!$SPN) {
-                                $SPN = New-AzureADServicePrincipal -AccountEnabled $true -AppId $App.AppId -AppRoleAssignmentRequired $true -DisplayName $OldObject.DisplayName -Tags {WindowsAzureActiveDirectoryIntegratedApp}
-                            }
-                        }
-
-                        if ($OldObject.Owners -ne 'None') {
-                            Add-AzureADApplicationOwner -ObjectId $App.ObjectId -RefObjectId (Find-AADUser -userPrincipalName $OldObject.UserPrincipalName).ObjectId
-                        }
+                    if (!$App) {
+                        if (!$OldObject.ReplyURLs) { $OldObject.ReplyURLs = "http://localhost" }
+                        if (!$OldObject.HomePage) { $OldObject.HomePage = "http://localhost" }
+                        $App = New-AzureADApplication -DisplayName $OldObject.DisplayName -Homepage $OldObject.HomePage -ReplyUrls $OldObject.ReplyURLs
+                        $SPN = New-AzureADServicePrincipal -AccountEnabled $true -AppId $App.AppId -AppRoleAssignmentRequired $true -DisplayName $OldObject.DisplayName -Tags {WindowsAzureActiveDirectoryIntegratedApp}
                     }
                     else {
-                        $SPN = New-Object PSObject -Property @{'ObjectId' = (New-Guid).Guid}
+                        $SPN = Get-AzureADServicePrincipal -Filter ("AppID eq '{0}'" -f $App.AppId)
+                        if (!$SPN) {
+                            $SPN = New-AzureADServicePrincipal -AccountEnabled $true -AppId $App.AppId -AppRoleAssignmentRequired $true -DisplayName $OldObject.DisplayName -Tags {WindowsAzureActiveDirectoryIntegratedApp}
+                        }
+                    }
+
+                    if ($OldObject.Owners -ne 'None') {
+                        Add-AzureADApplicationOwner -ObjectId $App.ObjectId -RefObjectId (Find-AADUser -userPrincipalName $OldObject.UserPrincipalName).ObjectId
                     }
                 }
                 $ObjectIdTranslation.Add($OldObject.ObjectId, $SPN.ObjectId)
@@ -94,18 +96,26 @@ function Assert-AADObjectId {
 
             'User' {
                 $OldObject = $OldTenant.Users | Where-Object { $_.ObjectId -eq $ObjectId }
-
                 if ($OldObject.UserPrincipalName) {
                     $User = Find-AADUser -userPrincipalName $OldObject.UserPrincipalName
-
-                    if ($User) {
-                        Write-Verbose ("Caching {0} object id for old object ({1})" -f $User.ObjectId, $OldObject.ObjectId)
-                        $ObjectIdTranslation.Add($OldObject.ObjectId, $User.ObjectId)
-                        $NewObjectId = $User.ObjectId
+                    if (-not $User) {
+                        $userPrincipalName = $OldObject.UserPrincipalName
+                        if ($userPrincipalName -match '#EXT#') {
+                            $userPrincipalName = $userPrincipalName.SubString(0, $userPrincipalName.IndexOf("#")).Replace("_", "@")
+                        }
+                        $userParams = @{
+                            DisplayName       = $OldObject.DisplayName
+                            UserPrincipalName = $userPrincipalName -replace '@.*', ('@{0}' -f $tenantSuffix)
+                            mailNickname      = $userPrincipalName -replace '@.*'
+                            UserType          = $OldObject.UserType
+                            PasswordProfile   = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile -arg 'pAzzw0rd!', $true
+                            AccountEnabled    = $false
+                        }
+                        $User = New-AzureADUser @userParams
                     }
-                }
-                else {
-                    return $ObjectId
+                    Write-Verbose ("Caching ObjectId {0} for old ObjectId {1}" -f $User.ObjectId, $OldObject.ObjectId)
+                    $ObjectIdTranslation.Add($OldObject.ObjectId, $User.ObjectId)
+                    $NewObjectId = $User.ObjectId
                 }
                 break
             }
@@ -129,8 +139,18 @@ function Assert-AADObjectId {
 function Import-RBAC {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        $Path = ($PWD).Path
+        [Parameter(Mandatory = $true)]
+        [Alias('Path', 'File')]
+        [string] $FilePath
     )
+
+    $oldTenant = $null
+    try {
+        $oldTenant = Import-Clixml -Path $FilePath
+    }
+    catch {
+        throw 'Error: Exported xml files missing, make sure you are reading from the correct path'
+    }
 
     try {
 
@@ -141,57 +161,38 @@ function Import-RBAC {
     }
 
     try {$context = Get-AzContext} catch {}
-    if (-not $context.Subscription.Id) {
+    if (-not $context.Tenant.Id) {
         throw 'Error: Not connected to Azure RM. Please run Connect-AzAccount'
     }
 
-    try {
-        $ObjectIdTranslation = @{}
-        $oldTenant = @{
-            Subscriptions = (Import-Clixml -Path (Join-Path -Path $Path -ChildPath Subscriptions.xml))
-            Users         = (Import-Clixml -Path (Join-Path -Path $Path -ChildPath Users.xml))
-            Groups        = (Import-Clixml -Path (Join-Path -Path $Path -ChildPath Groups.xml))
-            Applications  = (Import-Clixml -Path (Join-Path -Path $Path -ChildPath Applications.xml))
-            SPNs          = (Import-Clixml -Path (Join-Path -Path $Path -ChildPath ServicePrincipal.xml))
+    $ObjectIdTranslation = @{}
+    $sub = Select-AzSubscription -SubscriptionId $oldTenant.Subscription.SubscriptionId -ErrorAction Stop -WhatIf:$false
+    if ($PSCmdlet.ShouldProcess(('Azure Subscription: {0} ({1})' -f $sub.Subscription.Name, $sub.Subscription.Id))) {
+
+        $tenantSuffix = (Get-AzureADDomain).Name
+        $tenantId = (Get-AzContext).Tenant.Id
+        $currentRBAC = Get-AzRoleAssignment -Scope ('/subscriptions/{0}' -f $oldTenant.Subscription.SubscriptionId)
+
+        foreach ($ace In  $oldTenant.Subscription.RBAC) {
+            $ObjectId = (Assert-AADObjectId -ObjectId $ace.ObjectId -ObjectType $ace.ObjectType)
+            if ($ObjectId) {
+                if (-not ($currentRBAC | Where-Object -FilterScript {$_.ObjectId -eq $ObjectId -and $_.ObjectType -eq $ace.ObjectType -and $_.RoleDefinitionName -eq $ace.RoleDefinitionName})) {
+                    New-AzRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $ace.RoleDefinitionName -Scope ('/subscriptions/{0}' -f $oldTenant.Subscription.SubscriptionId) -Verbose | Out-Null
+                }
+            }
         }
-    }
-    catch {
-        throw 'Error: Exported xml files missing, make sure you are reading from the correct path'
-    }
 
-    foreach ($sub in $oldTenant.Subscriptions) {
-        if ($PSCmdlet.ShouldProcess('Azure Subscription: {0}' -f $sub.Name)) {
-            Select-AzSubscription -SubscriptionId $sub.SubscriptionId -ErrorAction Stop
-            $currentRBAC = Get-AzRoleAssignment -Scope ('/subscriptions/{0}' -f $sub.SubscriptionId)
-
-            $tenantId = (Get-AzContext).Tenant.Id
-            $keyVaults = Get-AzKeyVault | Get-AzResource | Where-Object { $_.Properties.tenantId -ne $tenantId }
-            foreach ($keyVault in $keyVaults) {
-                $keyVault.Properties.tenantId = $tenantId
-                foreach ($policy In $KeyVault.Properties.accessPolicies) {
-                    $newObjectId = Find-AzureObjectId -ObjectId $policy.objectId
-                    if ($newObjectId) {
-                        $policy.tenantid = $tenantId
-                        $policy.objectId = Find-AzureObjectId -ObjectId $policy.objectId
-                    }
-                }
-                if ($PSCmdlet.ShouldProcess($keyVault, 'Set-AzResource')) {
-                    Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force -Verbose
+        $keyVaults = Get-AzKeyVault | Get-AzResource | Where-Object { $_.Properties.tenantId -ne $tenantId }
+        foreach ($keyVault in $keyVaults) {
+            $keyVault.Properties.tenantId = $tenantId
+            foreach ($policy In $KeyVault.Properties.accessPolicies) {
+                $newObjectId = Assert-AADObjectId -ObjectId $policy.objectId
+                if ($newObjectId) {
+                    $policy.tenantId = $tenantId
+                    $policy.objectId = $newObjectId
                 }
             }
-
-            foreach ($ace In $sub.RBAC) {
-
-                if ($PSCmdlet.ShouldProcess($ace.DisplayName, 'New-AzRoleAssignment')) {
-                    $ObjectId = (Assert-AADObjectId -ObjectId $ace.ObjectId -ObjectType $ace.ObjectType)
-
-                    if ($ObjectId) {
-                        if (-not ($currentRBAC | Where-Object -FilterScript {$_.ObjectId -eq $ObjectId -and $_.ObjectType -eq $ace.ObjectType -and $_.RoleDefinitionName -eq $ace.RoleDefinitionName})) {
-                            New-AzRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $ace.RoleDefinitionName -Scope ('/subscriptions/{0}' -f $sub.SubscriptionId)
-                        }
-                    }
-                }
-            }
+            Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force -Verbose
         }
     }
 }
@@ -199,8 +200,12 @@ function Import-RBAC {
 function Export-RBAC {
     [CmdletBinding()]
     param(
-        $SubscriptionName = '*',
-        $Path = ($PWD).Path
+        [Parameter(Mandatory)]
+        [string] $SubscriptionId,
+
+        [Parameter(Mandatory)]
+        [Alias('Path')]
+        [string] $OutputPath
     )
 
     try {
@@ -212,28 +217,27 @@ function Export-RBAC {
     }
 
     try {$context = Get-AzContext} catch {}
-    if (-not $context.Subscription.Id) {
+    if (-not $context.Tenant.Id) {
         throw 'Error: Not connected to Azure RM. Please run Connect-AzAccount'
     }
 
-    Write-Verbose 'Exporting Subscriptions' -Verbose
-    $subscriptions = Get-AzSubscription | Where-Object { $_.Name -like $SubscriptionName } | ForEach-Object {
-        Set-AzContext -SubscriptionObject $_ | Out-Null
-        New-Object psobject -Property @{
-            SubscriptionId   = $_.Id
-            SubscriptionName = $_.Name
-            RBAC             = (Get-AzRoleAssignment | Select-Object -Unique ObjectId, DisplayName, ObjectType, RoleDefinitionName)
-        }
+    $exportData = @{}
+
+    Write-Verbose 'Reading Subscription RBACs' -Verbose
+    $sub = Get-AzSubscription -SubscriptionId $SubscriptionId
+    Set-AzContext -SubscriptionObject $sub | Out-Null
+    $subscription = New-Object psobject -Property @{
+        SubscriptionId   = $sub.Id
+        SubscriptionName = $sub.Name
+        RBAC             = (Get-AzRoleAssignment | Select-Object -Unique ObjectId, DisplayName, ObjectType, RoleDefinitionName)
     }
-    $subscriptions | Export-Clixml -Path (Join-Path -Path $Path -ChildPath Subscriptions.xml)
+    $exportData.Subscription = $subscription
 
+    Write-Verbose 'Reading Users' -Verbose
+    $users = Get-AzureADUser -All $true | Select-Object -Property ObjectId, DisplayName, UserPrincipalName, UserType
+    $exportData.Users = $users
 
-    Write-Verbose 'Exporting Users' -Verbose
-    Get-AzureADUser -All $true | Select-Object -Property ObjectId, DisplayName, UserPrincipalName, UserType |
-        Export-Clixml -Path (Join-Path -Path $Path -ChildPath Users.xml)
-
-
-    Write-Verbose 'Exporting Groups' -Verbose
+    Write-Verbose 'Reading Groups' -Verbose
     $groups = Get-AzureADGroup -All $true | ForEach-Object {
         $Members = Get-AzureADGroupMember -ObjectId $_.ObjectId | ForEach-Object {
             if ($_.ObjectType -eq 'Group') {
@@ -249,10 +253,9 @@ function Export-RBAC {
             Members     = $Members
         }
     }
-    $groups | Export-Clixml -Path (Join-Path -Path $Path -ChildPath Groups.xml)
+    $exportData.Groups = $groups
 
-
-    Write-Verbose 'Exporting Applications' -Verbose
+    Write-Verbose 'Reading Applications' -Verbose
     $apps = Get-AzureADApplication -All $true | ForEach-Object {
         $owners = Get-AzureADApplicationOwner -ObjectId $_.ObjectId
         New-Object -TypeName PSObject -Property @{
@@ -262,10 +265,9 @@ function Export-RBAC {
             Owners      = $(if ($owners) { $owners.DisplayName } else {'None'})
         }
     }
-    $apps | Export-Clixml -Path (Join-Path -Path $Path -ChildPath Applications.xml)
+    $exportData.Applications = $apps
 
-
-    Write-Verbose 'Exporting Service Principal Names' -Verbose
+    Write-Verbose 'Reading Service Principal Names' -Verbose
     $spns = Get-AzureADServicePrincipal -All $true | ForEach-Object {
         $owners = Get-AzureADServicePrincipalOwner -ObjectId $_.ObjectId
         $servicePrincipal = New-Object -TypeName PSObject -Property @{
@@ -282,6 +284,11 @@ function Export-RBAC {
         }
         $servicePrincipal
     }
-    $spns | Export-Clixml -Path (Join-Path -Path $Path -ChildPath ServicePrincipal.xml)
+    $exportData.ServicePrincipal = $spns
+
+    Write-Verbose 'Exporting RBACs' -Verbose
+    $outputFile = (Join-Path -Path $OutputPath -ChildPath "$($SubscriptionId).xml")
+    $exportData | Export-Clixml -Path $outputFile
+    Get-Item -Path $outputFile
 }
 
