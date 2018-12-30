@@ -113,7 +113,6 @@ function Assert-AADObjectId {
                         }
                         $User = New-AzureADUser @userParams
                     }
-                    Write-Verbose ("Caching ObjectId {0} for old ObjectId {1}" -f $User.ObjectId, $OldObject.ObjectId)
                     $ObjectIdTranslation.Add($OldObject.ObjectId, $User.ObjectId)
                     $NewObjectId = $User.ObjectId
                 }
@@ -292,3 +291,5 @@ function Export-RBAC {
     Get-Item -Path $outputFile
 }
 
+
+Export-ModuleMember -Function Login, Export-RBAC, Import-RBAC
