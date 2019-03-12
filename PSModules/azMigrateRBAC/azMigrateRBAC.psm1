@@ -328,12 +328,12 @@ function Export-UserList {
     $exportData.ServicePrincipal = $spns
 
     Write-Verbose 'Creating NewTenantUserList.csv' -Verbose
-    $UserMappings = @()
-    $UserMappings += $exportData.Users | Select-Object -Property @{N = 'Type'; E = {'User'}}, ObjectId, DisplayName
-    $UserMappings += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, ObjectId, DisplayName
-    $UserMappings += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, ObjectId, DisplayName
-    $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'SPN'}}, ObjectId, DisplayName
-    $UserMappings | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv')
+    $NewTenantUserList = @()
+    $NewTenantUserList += $exportData.Users | Select-Object -Property @{N = 'Type'; E = {'User'}}, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, ObjectId, DisplayName
+    $NewTenantUserList | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv')
 }
 
 
