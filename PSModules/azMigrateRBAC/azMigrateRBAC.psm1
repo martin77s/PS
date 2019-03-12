@@ -127,13 +127,14 @@ function Import-RBAC {
                 $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId})[0]).ObjectIdInNewTenant
                 $newObjectId = Find-AADObject -ObjectId $ObjectId
                 if ($newObjectId) {
-                    $policy.tenantId = $tenantId
+                    Write-Host ('Setting access for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
+                    $policy.tenantId = $keyVault.Properties.tenantId
                     $policy.objectId = $newObjectId.ObjectId
                 }
+                $policy
             }
-            #Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force -Verbose
-            $PropertiesObject = @{ accessPolicies = $accessPolicies }
-            Set-AzResource -ResourceId $keyVault.Id -Properties $PropertiesObject -ApiVersion 2016-10-01 -Force
+            $keyVaults.Properties.accessPolicies = $accessPolicies
+            Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force | Out-Null
         }
     }
 }
@@ -228,7 +229,7 @@ function Export-RBAC {
     }
     $exportData.Add('ServicePrincipal', $spns)
 
-    Write-Verbose 'Exporting KeyVault Access Policies' -Verbose
+    Write-Verbose 'Reading KeyVault Access Policies' -Verbose
     $keyVaults = Get-AzKeyVault | Get-AzResource
     $keyVaultAccessPolicies = foreach ($keyVault in $keyVaults) {
         foreach ($policy In $KeyVault.Properties.accessPolicies) {
@@ -255,7 +256,8 @@ function Export-RBAC {
     $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
     $UserMappings = $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant}
     $UserMappings += $exportData.KeyVaultAccessPolicies | Select-Object Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant
-    $UserMappings | Select-Object -Unique | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
+    $UserMappings | Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
+        ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
 }
 
 function Export-UserList {
