@@ -156,6 +156,7 @@ function Export-RBAC {
     $subscription = New-Object psobject -Property @{
         SubscriptionId   = $sub.Id
         SubscriptionName = $sub.Name
+        State            = $sub.State
         RBAC             = (Get-AzRoleAssignment | Select-Object -Unique ObjectId, DisplayName, ObjectType, RoleDefinitionName, Scope)
     }
     $exportData.Add('Subscription', $subscription)
