@@ -52,27 +52,11 @@ function Find-AADObject {
         [Parameter(Mandatory)]
         [string] $ObjectId
     )
-
-    $objectFound = $null
-
-    if (-not $objectFound) {
-        # Try to find as User
-        try { $objectFound = Get-AzureADUser -ObjectId $ObjectId } catch {}
+    try {
+        $objectFound = Get-AzureADObjectByObjectId -ObjectIds $ObjectId
     }
-
-    if (-not $objectFound) {
-        # Trying to find as Group
-        try { $objectFound = Get-AzureADGroup -ObjectId $ObjectId } catch {}
-    }
-
-    if (-not $objectFound) {
-        # Trying to find as ServicePrincipal
-        try { $objectFound = Get-AzureADServicePrincipal -ObjectId $ObjectId } catch {}
-    }
-
-    if (-not $objectFound) {
-        # Trying to find as Application
-        try { $objectFound = Get-AzureADApplication -ObjectId $ObjectId } catch {}
+    catch {
+        $objectFound = $null
     }
     $objectFound
 }
@@ -214,12 +198,13 @@ function Export-RBAC {
     $spns = Get-AzureADServicePrincipal -All $true | ForEach-Object {
         $owners = Get-AzureADServicePrincipalOwner -ObjectId $_.ObjectId
         $servicePrincipal = New-Object -TypeName PSObject -Property @{
-            ObjectId    = $_.ObjectId
-            AppId       = $_.AppId
-            DisplayName = $_.DisplayName
-            HomePage    = $_.HomePage
-            ReplyURLs   = $_.ReplyURLs
-            Owners      = 'None'
+            ObjectId             = $_.ObjectId
+            AppId                = $_.AppId
+            DisplayName          = $_.DisplayName
+            HomePage             = $_.HomePage
+            ReplyURLs            = $_.ReplyURLs
+            ServicePrincipalType = $_.ServicePrincipalType
+            Owners               = 'None'
         }
         if ($owners) {
             $servicePrincipal.Owners = $owners.DisplayName
@@ -228,6 +213,10 @@ function Export-RBAC {
         $servicePrincipal
     }
     $exportData.Add('ServicePrincipal', $spns)
+    $MSIs = @($spns | Where-Object { $_.ServicePrincipalType -eq 'ManagedIdentity' })
+    if ($MSIs.Count -gt 0) {
+        Write-Warning -Message ('{0} Managed Identities found. They should be re-created manually on the resource after the migration' -f $MSIs.Count)
+    }
 
     Write-Verbose 'Reading KeyVault Access Policies' -Verbose
     $keyVaults = Get-AzKeyVault | Get-AzResource
