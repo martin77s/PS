@@ -1,5 +1,4 @@
 break
-$PSDefaultParameterValues = @{'*:Path' = 'C:\Temp\scraps' }
 
 
 #region Calculated property with a function
