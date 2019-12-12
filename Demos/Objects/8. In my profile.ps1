@@ -16,3 +16,7 @@ $splat = @{
     Force      = $true
 }
 Update-TypeData @splat
+
+
+$a = { Get-Date }
+$a.EncodedCommand

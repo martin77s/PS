@@ -8,14 +8,10 @@ $d = Get-Process
 $e = Get-WmiObject -Class Win32_BIOS
 
 $a
-
 $b
-
 $c
-
 $d
-
-$e
+$e.
 
 
 
@@ -34,7 +30,8 @@ Get-Service wi* | Where-Object { $_.Status -eq 'Stopped' }
 
 '1a', '25', '3a', '12', '6' | Sort-Object -Property { "0x$_" -as [int] }
 
-'1.2.3.4', '10.1.2.3', '100.4.2.1', '2.3.4.5' , '9.10.11.12' | Sort-Object -Property { [version] $_ }
+'1.2.3.4', '10.1.2.3', '100.4.2.1', '2.3.4.5' , '9.10.11.12' |
+    Sort-Object -Property { [version] $_ }
 
 
 # Properties vs. methods
@@ -51,7 +48,7 @@ Get-Member -InputObject $p
 
 # Sometime you gotta use methods
 $dueDate = Get-Date
-$dueDate
+$dueDate.AddDays(7)
 
 
 

@@ -4,7 +4,7 @@ Get-Date
 
 Get-Date | fl
 
-Update-TypeData -TypeName System.DateTime -DefaultDisplayPropertySet DateTime, DayOfYear -Force
+Update-TypeData -TypeName System.DateTime -DefaultDisplayPropertySet DateTime, DayfWeek, DayOfYear -Force
 Get-Date | fl
 
 

@@ -13,7 +13,7 @@ function Get-FriendlySize {
     '{0:N2} {1}' -f $Bytes, $sizes[$i]
 }
 
-Get-FriendlySize -Bytes 123123123
+Get-FriendlySize -Bytes 123123
 dir | Select-Object FullName, @{N = 'Size'; E = { Get-FriendlySize $_.Length } }
 dir | Select-Object FullName, @{N = 'Size'; E = { Get-FriendlySize $_.Length } } | Sort-Object Size
 
