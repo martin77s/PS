@@ -1,57 +1,39 @@
 ﻿
 function ConvertFrom-ISO8601Duration {
-    
-    [CmdletBinding(SupportsShouldProcess=$false)]
+    [CmdletBinding(SupportsShouldProcess = $false)]
     [OutputType([System.TimeSpan])]
 
     param(
-        [Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true, Mandatory=$true)] 
-        [Alias('ISO8601', 'String')] 
+        [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Mandatory = $true)]
+        [Alias('ISO8601', 'String')]
         [string]$Duration
     )
 
-    $pattern = '^P?T?((?<Years>\d+)Y)?((?<Months>\d+)M)?((?<Weeks>\d+)W)?((?<Days>\d+)D)?(T((?<Hours>\d+)H)?((?<Minutes>\d+)M)?((?<Seconds>\d*(\.)?\d*)S)?)$'
+    [System.Xml.XmlConvert]::ToTimeSpan($Duration.ToUpper())
 
-    Write-Verbose -Message 'Matching the provided duration to the regular expression pattern'
-    if($Duration -match $pattern) {
 
-        $dt = [datetime]::MinValue
-        if ($Matches.Seconds) { $dt = $dt.AddSeconds($Matches.Seconds) }
-        if ($Matches.Minutes) { $dt = $dt.AddMinutes($Matches.Minutes) }
-        if ($Matches.Hours)   { $dt = $dt.AddHours($Matches.Hours) }
-        if ($Matches.Days)    { $dt = $dt.AddDays($Matches.Days) }
-        if ($Matches.Weeks)   { $dt = $dt.AddDays(7*$Matches.Weeks) }
-        if ($Matches.Months)  { $dt = $dt.AddMonths($Matches.Months) }
-        if ($Matches.Years)   { $dt = $dt.AddYears($Matches.Years) }
-        $dt - [datetime]::MinValue
-    
-    } else {
-        Write-Warning 'The provided string does not match the ISO 8601 duration format'
-    }
-
-<#
+    <#
 .SYNOPSIS
-    The ConvertFrom-ISO8601Duration can be used to convert a duration string in the ISO 8601 format to a Timespan object.
+    The ConvertFrom-ISO8601Duration can be used to convert a duration string in the ISO 8601 format to a timespan object.
 
 .DESCRIPTION
-    The ConvertFrom-ISO8601Duration uses a regular expression pattern to extract the date and time parts from the duration stirng the ISO 8601 format, 
-    and uses those extracted parts to create an quivalent Timespan object that represents the same period of time duration.
+    The ConvertFrom-ISO8601Duration uses the ToTimeSpan() static method in the System.Xml.XmlConvert to read the duration string the ISO 8601 format and convert it to a timespan object.
     More information on the ISO 8601 format can be found at http://www.iso.org/iso/home/standards/iso8601.htm
     More information on the duration format can be found at https://en.wikipedia.org/wiki/ISO_8601#Durations
 
 .INPUTS
-    [string]
+    [System.String]
 
 .OUTPUTS
     [System.TimeSpan]
 
 
 .NOTES
-    Author : Martin Schvartzman, martin.schvartzman@microsoft.com 
+    Author : Martin Schvartzman, martin.schvartzman@microsoft.com
     Blog   : http://aka.ms/pstips
 
-.PARAMETER Duration  
-    Specifies the duration in the ISO 8601 format you want to convert to a Timespan object
+.PARAMETER Duration
+    Specifies the duration in the ISO 8601 format you want to convert to a timespan object
 
 .EXAMPLE
     ConvertFrom-ISO8601Duration -Duration PT7200.000S
@@ -88,6 +70,57 @@ function ConvertFrom-ISO8601Duration {
     (ConvertFrom-ISO8601Duration -ISO8601 P0DT12H30M45S).ToString()
 
     12:30:45
+
+#>
+}
+
+
+function ConvertTo-ISO8601Duration {
+    [CmdletBinding(SupportsShouldProcess = $false)]
+    [OutputType([System.String])]
+
+    param(
+        [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Mandatory = $true)]
+        [Alias('Duration')]
+        [System.TimeSpan]$TimeSpan
+    )
+
+    [System.Xml.XmlConvert]::ToString($TimeSpan)
+
+
+    <#
+.SYNOPSIS
+    The ConvertTo-ISO8601Duration can be used to convert a timespan object into a duration string in the ISO 8601 format.
+
+.DESCRIPTION
+    The ConvertTo-ISO8601Duration uses the ToString() static method in the System.Xml.XmlConvert to convert a timespan object into to a ISO 8601 string format.
+    More information on the ISO 8601 format can be found at http://www.iso.org/iso/home/standards/iso8601.htm
+    More information on the duration format can be found at https://en.wikipedia.org/wiki/ISO_8601#Durations
+
+.INPUTS
+    [System.TimeSpan]
+
+.OUTPUTS
+    [System.String]
+
+
+.NOTES
+    Author : Martin Schvartzman, martin.schvartzman@microsoft.com
+    Blog   : http://aka.ms/pstips
+
+.PARAMETER TimeSpan
+    Specifies the duration timespan object you want to convert to the ISO 8601 string format
+
+.EXAMPLE
+    ConvertTo-ISO8601Duration -Duration (New-TimeSpan -Hours 6 -Minutes 30 -Seconds 10)
+
+    PT6H30M10S
+
+
+.EXAMPLE
+    [timespan]::MaxValue | ConvertTo-ISO8601Duration
+
+    P10675199DT2H48M5.4775807S
 
 #>
 }
