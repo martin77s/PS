@@ -244,7 +244,7 @@ function Export-RBAC {
     $UserMappings += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
     $UserMappings += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
     $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
-    $UserMappings = $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant}
+    $UserMappings += $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant}
     $UserMappings += $exportData.KeyVaultAccessPolicies | Select-Object Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant
     $UserMappings | Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
         ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
