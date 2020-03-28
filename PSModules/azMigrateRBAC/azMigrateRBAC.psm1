@@ -28,12 +28,13 @@ Import-RBAC -Path C:\TargetFolder
 
 
 Important notes:
-- Verify target Management group structure and policies
-- Azure DevOps:
-    - Switch directory at the organization level
-    - Update Service Connections if using Service Principals (at the project level as well)
-    - Update administrator and users (at the project level as well)
-    https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/faq-azure-access?view=azure-devops#faq-connect
+    - The user initiating the subscription transfer needs to be invited from the source tenant to the destination tenant
+    - Verify target Management group structure and policies
+    - Azure DevOps:
+        - Switch directory at the organization level
+        - Update Service Connections if using Service Principals (at the project level as well)
+        - Update administrator and users (at the project level as well)
+        https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/faq-azure-access?view=azure-devops#faq-connect
 
 #>
 
