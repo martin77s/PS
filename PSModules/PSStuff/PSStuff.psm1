@@ -1362,3 +1362,41 @@ function Show-WeatherImage {
   }
   Write-Host ""
 }
+
+
+function Uninstall-OldModule {
+
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+
+    param([string]$Name = '*', [switch]$ListOnly)
+
+    $manyVersions = & {
+        $VerbosePreference = 'SilentlyContinue'
+        Get-Module -ListAvailable -Name $Name | Select-Object -Property Name, Version, @{N = 'BasePath'; E = { Split-Path -Path $_.ModuleBase -Parent } } |
+            Group-Object -Property Name, BasePath | Where-Object { $_.Count -gt 1 } | Sort-Object -Property Count -Descending
+    }
+
+    $oldVersions = $manyVersions | ForEach-Object {
+        $group = $_.Name -split ', '
+        $versions = @($_.Group.Version | Select-Object -Skip 1)
+        [pscustomobject]@{
+            Count    = $_.Count - 1
+            Name     = $group[0]
+            BasePath = $group[1]
+            Versions = $versions
+        }
+    }
+
+    if ($ListOnly) {
+        $oldVersions
+    } else {
+        $oldVersions | ForEach-Object {
+            foreach ($version in $_.Versions) {
+                $Path = Join-Path $_.BasePath -ChildPath $version
+                if ($PSCmdlet.ShouldProcess(('{0} {1} under {2}' -f $_.Name, $version, $_.BasePath), 'Uninstall Module')) {
+                    Remove-Item -Path $Path -Recurse -Force
+                }
+            }
+        }
+    }
+}
