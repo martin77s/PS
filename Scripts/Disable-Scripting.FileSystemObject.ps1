@@ -85,7 +85,11 @@ function Set-Ownership {
         [void][TokenManipulate]::AddPrivilege('SeTakeOwnershipPrivilege')
         [void][TokenManipulate]::AddPrivilege('SeRestorePrivilege')
 
-        $item = Get-Item -Path $Path
+        $item = Get-Item -Path $Path -ErrorAction SilentlyContinue
+        if(-not $item) {
+            Write-Warning ("'{0}' not found" -f $Path)
+            return
+        }
         $owner = New-Object System.Security.Principal.NTAccount -ArgumentList ($Identity -split '\\')
 
         if ($item.PSIsContainer) {
@@ -169,8 +173,8 @@ function Set-Ownership {
             if ($Recurse.IsPresent) { Write-Warning 'Object specified is neither a folder nor a registry key.  Recursion is not possible.' }
             switch ($item.PSProvider.Name) {
                 'FileSystem' { $acl = New-Object -TypeName System.Security.AccessControl.FileSecurity }
-                'Registry' { throw 'You cannot set ownership on a registry value'  }
-                default { throw "Unknown provider:  $($item.PSProvider.Name)" }
+                'Registry' { Write-Error 'You cannot set ownership on a registry value'  }
+                default { Write-Error "Unknown provider:  $($item.PSProvider.Name)" }
             }
             $acl.SetOwner($owner)
             Write-Verbose "Setting ownership for $($owner.Value) on $Path"
@@ -185,15 +189,24 @@ function Set-Ownership {
 #endregion
 
 #region Set ownership and add permissions to the relevant registry keys
-$regPath = 'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0\0\win32'
-Set-Ownership -Path $regPath -Identity 'BUILTIN\Administrators' -AddFullControl -Recurse -Verbose
+$regPaths = @(
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0\0\win32'
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0\0\win64'
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0\0'
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0\FLAGS'
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0\HELPDIR'
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}\1.0'
+    'Registry::HKEY_CLASSES_ROOT\TypeLib\{420B2830-E718-11CF-893D-00A0C9054228}'
+)
 
-$regPath = 'Registry::HKEY_CLASSES_ROOT\Scripting.FileSystemObject\CLSID'
-Set-Ownership -Path $regPath -Identity 'BUILTIN\Administrators' -AddFullControl -Recurse -Verbose
+foreach($regPath in $regPaths) {
+    Set-Ownership -Path $regPath -Identity 'BUILTIN\Administrators' -AddFullControl -Recurse -Verbose
+}
+
 #endregion
 
 #region unregister the FileSystemObject scrrun dll
-C:\Windows\System32\regsvr32.exe /u /s scrrun.dll
+C:\Windows\System32\regsvr32.exe scrrun.dll /u /s
 #endregion
 
 #region Test FileSystemObject ComObject (Should fail)
