@@ -16,7 +16,7 @@ You can use the NewTenantUserList.csv (created in the previous step by running t
 
 
 •	Step #3
-Initiate Transfer: At this step, the Subscription owner in the source tenant can proceed to "Transfer" the subscription from the source tenant to the target tenant. See Appendix 7.5 more details.
+Initiate Transfer: At this step, the Subscription owner in the source tenant can proceed to "Transfer" the subscription from the source tenant to the target tenant.
 Do not perform this step without performing step #1 as executing this step will reset all the role assignments in the source tenant and those deleted role assignments cannot be restored from that point of time onwards.
 
 
@@ -257,7 +257,7 @@ function Export-RBAC {
     $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
     $UserMappings += $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant}
     $UserMappings += $exportData.KeyVaultAccessPolicies | Select-Object Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant
-    $UserMappings | Where-Object { $true } |
+    $UserMappings | Where-Object { ($exportData.Subscription.RBAC.ObjectId) -contains $_.ObjectIdInOldTenant } |
 		Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
 			ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
 		
