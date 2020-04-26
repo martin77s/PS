@@ -216,6 +216,7 @@ function Export-RBAC {
             ReplyURLs            = $_.ReplyURLs
             ServicePrincipalType = $_.ServicePrincipalType
             Owners               = 'None'
+			UserPrincipalName    = $null
         }
         if ($owners) {
             $servicePrincipal.Owners = $owners.DisplayName
@@ -256,8 +257,20 @@ function Export-RBAC {
     $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
     $UserMappings += $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant}
     $UserMappings += $exportData.KeyVaultAccessPolicies | Select-Object Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant
-    $UserMappings | Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
-        ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
+    $UserMappings | Where-Object { $true } |
+		Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
+			ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
+		
+	Write-Verbose 'Creating RBAC html report' -Verbose
+	$head = @'
+    <style >
+        table { border-collapse: collapse; }
+        table, th, td { border: 1px solid black; padding: 5px; text-align: left; }
+        th { background-color: #808080; color: white; }
+        tr:hover { background-color: #E5E5E5; }
+    </style>
+'@
+	$exportData.Subscription.RBAC | ConvertTo-Html -Head $head | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'RBAC.htm')
 }
 
 function Export-UserList {
@@ -312,12 +325,13 @@ function Export-UserList {
     $spns = Get-AzureADServicePrincipal -All $true | ForEach-Object {
         $owners = Get-AzureADServicePrincipalOwner -ObjectId $_.ObjectId
         $servicePrincipal = New-Object -TypeName PSObject -Property @{
-            ObjectId    = $_.ObjectId
-            AppId       = $_.AppId
-            DisplayName = $_.DisplayName
-            HomePage    = $_.HomePage
-            ReplyURLs   = $_.ReplyURLs
-            Owners      = 'None'
+            ObjectId          = $_.ObjectId
+            AppId             = $_.AppId
+            DisplayName       = $_.DisplayName
+            HomePage          = $_.HomePage
+            ReplyURLs         = $_.ReplyURLs
+            Owners            = 'None'
+			UserPrincipalName = $null
         }
         if ($owners) {
             $servicePrincipal.Owners = $owners.DisplayName
