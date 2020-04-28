@@ -100,7 +100,7 @@ function Import-RBAC {
     if ($PSCmdlet.ShouldProcess(('Azure Subscription: {0} ({1})' -f $sub.Subscription.Name, $sub.Subscription.Id))) {
 
         $tenantId = $context.AzureAD.Tenant.Id.Guid
-        $userMappings = Import-Csv -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
+        $userMappings = Import-Csv -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
         foreach ($ace in $oldTenant.Subscription.RBAC) {
             $newRbac = Find-AADObject -ObjectId (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $ace.ObjectId})[0]).ObjectIdInNewTenant
             $params = @{
@@ -259,7 +259,7 @@ function Export-RBAC {
     $UserMappings += $exportData.KeyVaultAccessPolicies | Select-Object Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant
     $UserMappings | Where-Object { ($exportData.Subscription.RBAC.ObjectId) -contains $_.ObjectIdInOldTenant } |
 		Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
-			ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
+			Export-Csv -NoTypeInformation -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
 
 	Write-Verbose 'Creating RBAC html report' -Verbose
 	$head = @'
@@ -347,7 +347,7 @@ function Export-UserList {
     $NewTenantUserList += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, ObjectId, DisplayName
     $NewTenantUserList += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, ObjectId, DisplayName
     $NewTenantUserList += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, ObjectId, DisplayName
-    $NewTenantUserList | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv')
+    $NewTenantUserList | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv') -Delimiter ","
 }
 
 
