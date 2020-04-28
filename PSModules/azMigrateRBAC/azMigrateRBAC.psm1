@@ -108,7 +108,7 @@ function Import-RBAC {
                 RoleDefinitionName = $ace.RoleDefinitionName
                 Scope              = $ace.Scope
             }
-            if ( -not(Get-AzRoleAssignment @params)) {
+            if (-not(Get-AzRoleAssignment @params)) {
                 Write-Host ('Adding role {0} to {1} scoped at {2}' -f $params.RoleDefinitionName, $params.ObjectId, $params.Scope)
                 New-AzRoleAssignment @params | Out-Null
             }
@@ -260,7 +260,7 @@ function Export-RBAC {
     $UserMappings | Where-Object { ($exportData.Subscription.RBAC.ObjectId) -contains $_.ObjectIdInOldTenant } |
 		Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
 			ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'UserMappings.csv')
-		
+
 	Write-Verbose 'Creating RBAC html report' -Verbose
 	$head = @'
     <style >
