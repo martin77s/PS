@@ -99,7 +99,8 @@ function Import-RBAC {
     $sub = Select-AzSubscription -SubscriptionId $oldTenant.Subscription.SubscriptionId -ErrorAction Stop -WhatIf:$false
     if ($PSCmdlet.ShouldProcess(('Azure Subscription: {0} ({1})' -f $sub.Subscription.Name, $sub.Subscription.Id))) {
 
-        $tenantId = $context.AzureAD.Tenant.Id.Guid
+        #$tenantId = $context.AzureAD.Tenant.Id.Guid
+        $tenantId = (Get-AzContext).Tenant.TenantId
         $userMappings = Import-Csv -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
         foreach ($ace in $oldTenant.Subscription.RBAC) {
             $newRbac = Find-AADObject -ObjectId (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $ace.ObjectId})[0]).ObjectIdInNewTenant
@@ -142,7 +143,7 @@ function Import-RBAC {
                 if ( $_.permissions.certificates ) { $params.Add('PermissionsToCertificates', $_.permissions.keys)}
                 if ( $_.permissions.secrets ) { $params.Add('PermissionsToSecrets', $_.permissions.keys)}
                 if ( $_.permissions.storage ) { $params.Add('PermissionsToStorage', $_.permissions.storage) }
-                Set-AzKeyVaultAccessPolicy $params
+                Set-AzKeyVaultAccessPolicy @params
             }
         }
     }
