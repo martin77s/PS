@@ -118,11 +118,7 @@ function Import-RBAC {
 
             $newAccessPolicies = foreach ($policy In $KeyVault.Properties.accessPolicies) {
                 $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId })[0]).ObjectIdInNewTenant
-                try {
-                    $newObjectId = Find-AADObject -ObjectId $ObjectId
-                } catch {
-                    $newObjectId = $null
-                }
+                if ($ObjectId) { $newObjectId = Find-AADObject -ObjectId $ObjectId } else { $newObjectId = $null }
                 if ($newObjectId) {
                     Write-Host ('Calculating access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
                     $policy.tenantId = $keyVault.Properties.tenantId
