@@ -141,8 +141,9 @@ function Import-RBAC {
                 if( $_.permissions.keys ) { $params.Add('PermissionsToKeys', $_.permissions.keys)}
                 if( $_.permissions.certificates ) { $params.Add('PermissionsToCertificates', $_.permissions.keys)}
                 if( $_.permissions.secrets ) { $params.Add('PermissionsToSecrets', $_.permissions.keys)}
+                if ( $_.permissions.storage ) { $params.Add('PermissionsToStorage', $_.permissions.storage) }
                 Write-Host ('Setting access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
-                Set-AzKeyVaultAccessPolicy $params -Force
+                Set-AzKeyVaultAccessPolicy $params -Force -
             }
         }
     }
