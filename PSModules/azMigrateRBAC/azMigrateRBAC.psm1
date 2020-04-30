@@ -64,8 +64,7 @@ function Find-AADObject {
     )
     try {
         $objectFound = Get-AzureADObjectByObjectId -ObjectIds $ObjectId
-    }
-    catch {
+    } catch {
         $objectFound = $null
     }
     $objectFound
@@ -83,8 +82,7 @@ function Import-RBAC {
     $oldTenant = $null
     try {
         $oldTenant = Import-Clixml -Path (Get-ChildItem -Path $Path -Filter *.xml).FullName
-    }
-    catch {
+    } catch {
         throw 'Error: Exported xml file missing. Make sure you are reading from the correct path.'
     }
 
@@ -103,7 +101,7 @@ function Import-RBAC {
         $tenantId = (Get-AzContext).Tenant.TenantId
         $userMappings = Import-Csv -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
         foreach ($ace in $oldTenant.Subscription.RBAC) {
-            $newRbac = Find-AADObject -ObjectId (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $ace.ObjectId})[0]).ObjectIdInNewTenant
+            $newRbac = Find-AADObject -ObjectId (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $ace.ObjectId })[0]).ObjectIdInNewTenant
             $params = @{
                 ObjectId           = $newRbac.ObjectId
                 RoleDefinitionName = $ace.RoleDefinitionName
@@ -119,8 +117,12 @@ function Import-RBAC {
         foreach ($keyVault in $keyVaults) {
 
             $newAccessPolicies = foreach ($policy In $KeyVault.Properties.accessPolicies) {
-                $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId})[0]).ObjectIdInNewTenant
-                $newObjectId = Find-AADObject -ObjectId $ObjectId
+                $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId })[0]).ObjectIdInNewTenant
+                try {
+                    $newObjectId = Find-AADObject -ObjectId $ObjectId
+                } catch {
+                    $newObjectId = $null
+                }
                 if ($newObjectId) {
                     Write-Host ('Calculating access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
                     $policy.tenantId = $keyVault.Properties.tenantId
@@ -135,15 +137,17 @@ function Import-RBAC {
 
             $newAccessPolicies | ForEach-Object {
                 $params = @{
-                    VaultName = $keyVault.Name
+                    VaultName         = $keyVault.Name
                     ResourceGroupName = $keyVault.ResourceGroupName
-                    ObjectId = $_.objectId
+                    ObjectId          = $_.objectId
                 }
-                if ( $_.permissions.keys ) { $params.Add('PermissionsToKeys', $_.permissions.keys)}
-                if ( $_.permissions.certificates ) { $params.Add('PermissionsToCertificates', $_.permissions.keys)}
-                if ( $_.permissions.secrets ) { $params.Add('PermissionsToSecrets', $_.permissions.keys)}
-                if ( $_.permissions.storage ) { $params.Add('PermissionsToStorage', $_.permissions.storage) }
-                Set-AzKeyVaultAccessPolicy @params
+                if ($_.permissions.keys) { $params.Add('PermissionsToKeys', $_.permissions.keys) }
+                if ($_.permissions.certificates) { $params.Add('PermissionsToCertificates', $_.permissions.certificates) }
+                if ($_.permissions.secrets) { $params.Add('PermissionsToSecrets', $_.permissions.secrets) }
+                if ($_.permissions.storage) { $params.Add('PermissionsToStorage', $_.permissions.storage) }
+                if ($_.objectId) {
+                    Set-AzKeyVaultAccessPolicy @params
+                }
             }
         }
     }
@@ -168,7 +172,7 @@ function Export-RBAC {
         throw 'Error: Not connected to Azure RM. Please run Login-Azure'
     }
 
-    $exportData = @{}
+    $exportData = @{ }
     if (-not (Test-Path -Path $Path -PathType Container)) {
         New-Item -Path $Path -ItemType Directory | Out-Null
     }
@@ -196,8 +200,7 @@ function Export-RBAC {
         $Members = Get-AzureADGroupMember -ObjectId $_.ObjectId | ForEach-Object {
             if ($_.ObjectType -eq 'Group') {
                 $_ | Select-Object -Property ObjectId, DisplayName, ObjectType
-            }
-            elseif ($_.ObjectType -eq 'User') {
+            } elseif ($_.ObjectType -eq 'User') {
                 $_ | Select-Object -Property ObjectId, DisplayName, ObjectType, userPrincipalName
             }
         }
@@ -216,7 +219,7 @@ function Export-RBAC {
             ObjectId    = $_.ObjectId
             AppId       = $_.AppId
             DisplayName = $_.DisplayName
-            Owners      = $(if ($owners) { $owners.DisplayName } else {'None'})
+            Owners      = $(if ($owners) { $owners.DisplayName } else { 'None' })
         }
     }
     $exportData.Add('Applications', $apps)
@@ -232,7 +235,7 @@ function Export-RBAC {
             ReplyURLs            = $_.ReplyURLs
             ServicePrincipalType = $_.ServicePrincipalType
             Owners               = 'None'
-			UserPrincipalName    = $null
+            UserPrincipalName    = $null
         }
         if ($owners) {
             $servicePrincipal.Owners = $owners.DisplayName
@@ -251,11 +254,11 @@ function Export-RBAC {
     $keyVaultAccessPolicies = foreach ($keyVault in $keyVaults) {
         foreach ($policy In $KeyVault.Properties.accessPolicies) {
             $adObject = (Find-AADObject -ObjectId $policy.ObjectId)
-            $policy | Select-Object -Property @{N = 'ResourceId'; E = {$keyVault.ResourceId}},
-            @{N = 'Permissions'; E = {$_.permissions}}, @{N = 'Type'; E = {$adObject.ObjectType}},
-            @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}},
-            @{N = 'DisplayName'; E = {$adObject.DisplayName}},
-            @{N = 'ObjectIdInNewTenant'; E = {''}}
+            $policy | Select-Object -Property @{N = 'ResourceId'; E = { $keyVault.ResourceId } },
+            @{N = 'Permissions'; E = { $_.permissions } }, @{N = 'Type'; E = { $adObject.ObjectType } },
+            @{N = 'ObjectIdInOldTenant'; E = { $_.ObjectId } },
+            @{N = 'DisplayName'; E = { $adObject.DisplayName } },
+            @{N = 'ObjectIdInNewTenant'; E = { '' } }
         }
     }
     $exportData.Add('KeyVaultAccessPolicies', $keyVaultAccessPolicies)
@@ -267,18 +270,18 @@ function Export-RBAC {
 
     Write-Verbose 'Creating UserMappings.csv' -Verbose
     $UserMappings = @()
-    $UserMappings += $exportData.Users | Select-Object -Property @{N = 'Type'; E = {'User'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
-    $UserMappings += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
-    $UserMappings += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
-    $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, @{N = 'ObjectIdInOldTenant'; E = {$_.ObjectId}}, DisplayName, @{N = 'ObjectIdInNewTenant'; E = {''}}
-    $UserMappings += $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant}
+    $UserMappings += $exportData.Users | Select-Object -Property @{N = 'Type'; E = { 'User' } }, @{N = 'ObjectIdInOldTenant'; E = { $_.ObjectId } }, DisplayName, @{N = 'ObjectIdInNewTenant'; E = { '' } }
+    $UserMappings += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = { 'Group' } }, @{N = 'ObjectIdInOldTenant'; E = { $_.ObjectId } }, DisplayName, @{N = 'ObjectIdInNewTenant'; E = { '' } }
+    $UserMappings += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = { 'Application' } }, @{N = 'ObjectIdInOldTenant'; E = { $_.ObjectId } }, DisplayName, @{N = 'ObjectIdInNewTenant'; E = { '' } }
+    $UserMappings += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = { 'ServicePrincipal' } }, @{N = 'ObjectIdInOldTenant'; E = { $_.ObjectId } }, DisplayName, @{N = 'ObjectIdInNewTenant'; E = { '' } }
+    $UserMappings += $UserMappings | Where-Object { $exportData.Subscription.RBAC.ObjectID -contains $_.ObjectIdInOldTenant }
     $UserMappings += $exportData.KeyVaultAccessPolicies | Select-Object Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant
     $UserMappings | Where-Object { ($exportData.Subscription.RBAC.ObjectId) -contains $_.ObjectIdInOldTenant } |
-		Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
-			Export-Csv -NoTypeInformation -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
+        Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
+            Export-Csv -NoTypeInformation -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
 
-	Write-Verbose 'Creating RBAC html report' -Verbose
-	$head = @'
+Write-Verbose 'Creating RBAC html report' -Verbose
+$head = @'
     <style >
         table { border-collapse: collapse; }
         table, th, td { border: 1px solid black; padding: 5px; text-align: left; }
@@ -286,7 +289,7 @@ function Export-RBAC {
         tr:hover { background-color: #E5E5E5; }
     </style>
 '@
-	$exportData.Subscription.RBAC | ConvertTo-Html -Head $head | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'RBAC.htm')
+$exportData.Subscription.RBAC | ConvertTo-Html -Head $head | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'RBAC.htm')
 }
 
 function Export-UserList {
@@ -301,7 +304,7 @@ function Export-UserList {
         throw 'Error: Not connected to Azure AD. Please run Login-Azure'
     }
 
-    $exportData = @{}
+    $exportData = @{ }
 
     Write-Verbose 'Reading Users' -Verbose
     $users = Get-AzureADUser -All $true | Select-Object -Property ObjectId, DisplayName, UserPrincipalName, UserType
@@ -312,8 +315,7 @@ function Export-UserList {
         $Members = Get-AzureADGroupMember -ObjectId $_.ObjectId | ForEach-Object {
             if ($_.ObjectType -eq 'Group') {
                 $_ | Select-Object -Property ObjectId, DisplayName, ObjectType
-            }
-            elseif ($_.ObjectType -eq 'User') {
+            } elseif ($_.ObjectType -eq 'User') {
                 $_ | Select-Object -Property ObjectId, DisplayName, ObjectType, userPrincipalName
             }
         }
@@ -332,7 +334,7 @@ function Export-UserList {
             ObjectId    = $_.ObjectId
             AppId       = $_.AppId
             DisplayName = $_.DisplayName
-            Owners      = $(if ($owners) { $owners.DisplayName } else {'None'})
+            Owners      = $(if ($owners) { $owners.DisplayName } else { 'None' })
         }
     }
     $exportData.Applications = $apps
@@ -347,7 +349,7 @@ function Export-UserList {
             HomePage          = $_.HomePage
             ReplyURLs         = $_.ReplyURLs
             Owners            = 'None'
-			UserPrincipalName = $null
+            UserPrincipalName = $null
         }
         if ($owners) {
             $servicePrincipal.Owners = $owners.DisplayName
@@ -359,10 +361,10 @@ function Export-UserList {
 
     Write-Verbose 'Creating NewTenantUserList.csv' -Verbose
     $NewTenantUserList = @()
-    $NewTenantUserList += $exportData.Users | Select-Object -Property @{N = 'Type'; E = {'User'}}, ObjectId, DisplayName
-    $NewTenantUserList += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, ObjectId, DisplayName
-    $NewTenantUserList += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, ObjectId, DisplayName
-    $NewTenantUserList += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.Users | Select-Object -Property @{N = 'Type'; E = { 'User' } }, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = { 'Group' } }, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = { 'Application' } }, ObjectId, DisplayName
+    $NewTenantUserList += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = { 'ServicePrincipal' } }, ObjectId, DisplayName
     $NewTenantUserList | Export-Csv -NoTypeInformation -Path (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv') -Delimiter ","
 }
 
