@@ -116,19 +116,34 @@ function Import-RBAC {
 
         $keyVaults = Get-AzKeyVault | Get-AzResource | Where-Object { $_.Properties.tenantId -ne $tenantId }
         foreach ($keyVault in $keyVaults) {
-            $keyVault.Properties.tenantId = $tenantId
-            $accessPolicies = foreach ($policy In $KeyVault.Properties.accessPolicies) {
+
+            $newAccessPolicies = foreach ($policy In $KeyVault.Properties.accessPolicies) {
                 $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId})[0]).ObjectIdInNewTenant
                 $newObjectId = Find-AADObject -ObjectId $ObjectId
                 if ($newObjectId) {
-                    Write-Host ('Setting access for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
+                    Write-Host ('Calculating access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
                     $policy.tenantId = $keyVault.Properties.tenantId
                     $policy.objectId = $newObjectId.ObjectId
                 }
                 $policy
             }
-            $keyVaults.Properties.accessPolicies = $accessPolicies
+
+            $keyVault.Properties.tenantId = $tenantId
+            $keyVault.Properties.AccessPolicies = @()
             Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force | Out-Null
+
+            $newAccessPolicies | ForEach-Object {
+                $params = @{
+                    VaultName = $keyVault.Name
+                    ResourceGroupName = $keyVault.ResourceGroupName
+                    ObjectId = $_.objectId
+                }
+                if( $_.permissions.keys ) { $params.Add('PermissionsToKeys', $_.permissions.keys)}
+                if( $_.permissions.certificates ) { $params.Add('PermissionsToCertificates', $_.permissions.keys)}
+                if( $_.permissions.secrets ) { $params.Add('PermissionsToSecrets', $_.permissions.keys)}
+                Write-Host ('Setting access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
+                Set-AzKeyVaultAccessPolicy $params -Force
+            }
         }
     }
 }
@@ -347,7 +362,7 @@ function Export-UserList {
     $NewTenantUserList += $exportData.Groups | Select-Object -Property @{N = 'Type'; E = {'Group'}}, ObjectId, DisplayName
     $NewTenantUserList += $exportData.Applications | Select-Object -Property @{N = 'Type'; E = {'Application'}}, ObjectId, DisplayName
     $NewTenantUserList += $exportData.ServicePrincipal | Select-Object -Property @{N = 'Type'; E = {'ServicePrincipal'}}, ObjectId, DisplayName
-    $NewTenantUserList | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv') -Delimiter ","
+    $NewTenantUserList | Export-Csv -NoTypeInformation -Path (Join-Path -Path $Path -ChildPath 'NewTenantUserList.csv') -Delimiter ","
 }
 
 
