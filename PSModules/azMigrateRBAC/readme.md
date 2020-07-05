@@ -37,8 +37,10 @@ Import-RBAC -Path C:\TargetFolder
 
     - The user initiating the subscription transfer needs to be invited from the source tenant to the destination tenant
     - Verify target Management group structure and policies
+    - Recreate Managed Identities where needed
+      See [https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/known-issues#will-managed-identities-be-recreated-automatically-if-i-move-a-subscription-to-another-directory]
     - Azure DevOps:
         - Switch directory at the organization level
         - Update Service Connections if using Service Principals (at the project level as well)
         - Update administrator and users (at the project level as well)
-        https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/faq-azure-access?view=azure-devops#faq-connect
+          See [https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/faq-azure-access?view=azure-devops#faq-connect]
