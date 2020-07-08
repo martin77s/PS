@@ -5,9 +5,9 @@
 •	Step #1
 Backup Role Assignments: Backup all the role assignments from the source tenant using the PowerShell commands below to login to Azure to the current (“old”) tenant, export the roles and permissions, login again to the target (“new”) tenant and export the list of users to be used for the mappings.
 Import-Module AzMigrateRBAC
-Login-Azure -TenantId $oldTenantId
+Initialize-AzureContext -TenantId $oldTenantId
 Export-RBAC -Path C:\TargetFolder -SubscriptionId $subscriptionIdToMove
-Login-Azure -TenantId $newTenantId
+Initialize-AzureContext -TenantId $newTenantId
 Export-UserList -Path C:\TargetFolder
 
 •	Step #2
@@ -23,7 +23,7 @@ Do not perform this step without performing step #1 as executing this step will 
 •	Step #4
 Restore Role Assignments: Restore all the role assignments on to the target tenant using the PowerShell commands below to login to Azure to the new tenant
 Import-Module AzMigrateRBAC
-Login-Azure -TenantId $newTenantId
+Initialize-AzureContext -TenantId $newTenantId
 Import-RBAC -Path C:\TargetFolder
 
 
@@ -43,7 +43,7 @@ $script:Context = @{
     AzureRM = $null
 }
 
-function Login-Azure {
+function Initialize-AzureContext {
     param($TenantId)
     Write-Host 'Login to Azure Active Directory'
     Import-Module -Name AzureAD
@@ -87,11 +87,11 @@ function Import-RBAC {
     }
 
     if (-not $script:context.AzureAD.TenantId.Guid) {
-        throw 'Error: Not connected to Azure AD. Please run Login-Azure'
+        throw 'Error: Not connected to Azure AD. Please run Initialize-AzureContext'
     }
 
     if (-not $script:context.AzureRM.Tenant.Id) {
-        throw 'Error: Not connected to Azure RM. Please run Login-Azure'
+        throw 'Error: Not connected to Azure RM. Please run Initialize-AzureContext'
     }
 
     $sub = Select-AzSubscription -SubscriptionId $oldTenant.Subscription.SubscriptionId -ErrorAction Stop -WhatIf:$false
@@ -161,11 +161,11 @@ function Export-RBAC {
     )
 
     if (-not $script:context.AzureAD.TenantId.Guid) {
-        throw 'Error: Not connected to Azure AD. Please run Login-Azure'
+        throw 'Error: Not connected to Azure AD. Please run Initialize-AzureContext'
     }
 
     if (-not $script:context.AzureRM.Tenant.Id) {
-        throw 'Error: Not connected to Azure RM. Please run Login-Azure'
+        throw 'Error: Not connected to Azure RM. Please run Initialize-AzureContext'
     }
 
     $exportData = @{ }
@@ -276,16 +276,16 @@ function Export-RBAC {
         Select-Object -Property Type, ObjectIdInOldTenant, DisplayName, ObjectIdInNewTenant -Unique |
             Export-Csv -NoTypeInformation -Path (Join-Path -Path $Path -ChildPath 'UserMappings.csv') -Delimiter ","
 
-Write-Verbose 'Creating RBAC html report' -Verbose
-$head = @'
-    <style >
-        table { border-collapse: collapse; }
-        table, th, td { border: 1px solid black; padding: 5px; text-align: left; }
-        th { background-color: #808080; color: white; }
-        tr:hover { background-color: #E5E5E5; }
-    </style>
+    Write-Verbose 'Creating RBAC html report' -Verbose
+    $head = @'
+        <style >
+            table { border-collapse: collapse; }
+            table, th, td { border: 1px solid black; padding: 5px; text-align: left; }
+            th { background-color: #808080; color: white; }
+            tr:hover { background-color: #E5E5E5; }
+        </style>
 '@
-$exportData.Subscription.RBAC | ConvertTo-Html -Head $head | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'RBAC.htm')
+    $exportData.Subscription.RBAC | ConvertTo-Html -Head $head | Out-File -FilePath (Join-Path -Path $Path -ChildPath 'RBAC.htm')
 }
 
 function Export-UserList {
@@ -297,7 +297,7 @@ function Export-UserList {
     )
 
     if (-not $script:context.AzureAD.TenantId.Guid) {
-        throw 'Error: Not connected to Azure AD. Please run Login-Azure'
+        throw 'Error: Not connected to Azure AD. Please run Initialize-AzureContext'
     }
 
     $exportData = @{ }
@@ -365,4 +365,4 @@ function Export-UserList {
 }
 
 
-Export-ModuleMember -Function Login-Azure, Export-RBAC, Import-RBAC, Export-UserList
+Export-ModuleMember -Function Initialize-AzureContext, Export-RBAC, Import-RBAC, Export-UserList
