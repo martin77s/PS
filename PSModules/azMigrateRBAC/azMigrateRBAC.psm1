@@ -1,4 +1,4 @@
-#requires -Module AzureAD, Az.Accounts
+#requires -Module AzureAD, Az.Accounts, Az.Resources, Az.KeyVault
 
 <#
 
@@ -116,34 +116,38 @@ function Import-RBAC {
         $keyVaults = Get-AzKeyVault | Get-AzResource | Where-Object { $_.Properties.tenantId -ne $tenantId }
         foreach ($keyVault in $keyVaults) {
 
-            $newAccessPolicies = foreach ($policy In $KeyVault.Properties.accessPolicies) {
-                $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId })[0]).ObjectIdInNewTenant
-                if ($ObjectId) { $newObjectId = Find-AADObject -ObjectId $ObjectId } else { $newObjectId = $null }
-                if ($newObjectId) {
-                    Write-Host ('Calculating access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
-                    $policy.tenantId = $tenantId
-                    $policy.objectId = $newObjectId.ObjectId
+            if ($KeyVault.Properties.accessPolicies) {
+                $newAccessPolicies = foreach ($policy In $KeyVault.Properties.accessPolicies) {
+                    $ObjectId = (@($userMappings | Where-Object { $_.ObjectIdInOldTenant -eq $policy.ObjectId })[0]).ObjectIdInNewTenant
+                    if ($ObjectId) { $newObjectId = Find-AADObject -ObjectId $ObjectId } else { $newObjectId = $null }
+                    if ($newObjectId) {
+                        Write-Host ('Calculating access policy for {0} ({1}) to keyvault {2}' -f $newObjectId.ObjectId, $newObjectId.DisplayName, $keyVault.Id)
+                        $policy.tenantId = $tenantId
+                        $policy.objectId = $newObjectId.ObjectId
+                    }
+                    $policy
                 }
-                $policy
-            }
 
-            $keyVault.Properties.tenantId = $tenantId
-            $keyVault.Properties.AccessPolicies = @()
-            Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force | Out-Null
+                $keyVault.Properties.tenantId = $tenantId
+                $keyVault.Properties.AccessPolicies = @()
+                Set-AzResource -ResourceId $keyVault.Id -Properties $keyVault.Properties -Force | Out-Null
 
-            $newAccessPolicies | ForEach-Object {
-                $params = @{
-                    VaultName         = $keyVault.Name
-                    ResourceGroupName = $keyVault.ResourceGroupName
-                    ObjectId          = $_.objectId
+                $newAccessPolicies | ForEach-Object {
+                    $params = @{
+                        VaultName         = $keyVault.Name
+                        ResourceGroupName = $keyVault.ResourceGroupName
+                        ObjectId          = $_.objectId
+                    }
+                    if ($_.permissions.keys) { $params.Add('PermissionsToKeys', $_.permissions.keys) }
+                    if ($_.permissions.certificates) { $params.Add('PermissionsToCertificates', $_.permissions.certificates) }
+                    if ($_.permissions.secrets) { $params.Add('PermissionsToSecrets', $_.permissions.secrets) }
+                    if ($_.permissions.storage) { $params.Add('PermissionsToStorage', $_.permissions.storage) }
+                    if ($_.objectId) {
+                        Set-AzKeyVaultAccessPolicy @params
+                    }
                 }
-                if ($_.permissions.keys) { $params.Add('PermissionsToKeys', $_.permissions.keys) }
-                if ($_.permissions.certificates) { $params.Add('PermissionsToCertificates', $_.permissions.certificates) }
-                if ($_.permissions.secrets) { $params.Add('PermissionsToSecrets', $_.permissions.secrets) }
-                if ($_.permissions.storage) { $params.Add('PermissionsToStorage', $_.permissions.storage) }
-                if ($_.objectId) {
-                    Set-AzKeyVaultAccessPolicy @params
-                }
+            } else {
+                Write-Host ('Important: Access policies on {0} were empty. Use the XML for manually adding the required access' -f $keyVault.Name)
             }
         }
     }
