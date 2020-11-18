@@ -4,6 +4,7 @@
         Author		: Martin Schvartzman
         Reference   : https://msdn.microsoft.com/en-us/library/hh925568
 #>
+
 function Get-DotNetFrameworkVersion {
     [CmdletBinding()]
     param (
@@ -31,8 +32,9 @@ function Get-DotNetFrameworkVersion {
         '461310' = @{ Version = [System.Version]'4.7.1'   ; Comment = '(NON Windows 10)' }
         '461808' = @{ Version = [System.Version]'4.7.2'   ; Comment = '(Windows 10 1803)' }
         '461814' = @{ Version = [System.Version]'4.7.2'   ; Comment = '(NON Windows 10)' }
-        '528040' = @{ Version = [System.Version]'4.7.2'   ; Comment = '(Windows 10 1903)' }
+        '528040' = @{ Version = [System.Version]'4.8'     ; Comment = '(Windows 10 1903)' }
         '528049' = @{ Version = [System.Version]'4.8'     ; Comment = '(NON Windows 10)' }
+        '528372' = @{ Version = [System.Version]'4.8'     ; Comment = '(Windows 10 2004)' }
     }
 
     foreach ($computer in $ComputerName) {
@@ -42,14 +44,12 @@ function Get-DotNetFrameworkVersion {
                     if ($versionKeyName -match '^v[123]') {
                         $versionKey = $netRegKey.OpenSubKey($versionKeyName)
                         $version = [System.Version]($versionKey.GetValue('Version', ''))
-                        New-Object -TypeName PSObject -Property (
-                            [ordered]@{
+                        New-Object -TypeName PSObject -Property ([ordered]@{
                                 ComputerName = $computer
                                 Build        = $version.Build
                                 Version      = $version
                                 Comment      = ''
-                            }
-                        )
+                            })
                     }
                 }
             }
@@ -58,8 +58,7 @@ function Get-DotNetFrameworkVersion {
                 if (-not ($net4Release = $net4RegKey.GetValue('Release'))) {
                     $net4Release = 30319
                 }
-                New-Object -TypeName PSObject -Property (
-                    [ordered]@{
+                New-Object -TypeName PSObject -Property ([ordered]@{
                         ComputerName = $Computer
                         Build        = $net4Release
                         Version      = $dotNet4Builds["$net4Release"].Version
